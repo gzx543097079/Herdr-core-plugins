@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+
+# 独立运行时交给管理器组合布局；管理器调用时执行下方实际安装逻辑。
+if __name__ == '__main__':
+    import os
+    import sys
+    from pathlib import Path
+    if os.environ.get('HERDR_PLUGIN_COMPOSE') != '1':
+        if len(sys.argv) != 1:
+            raise SystemExit('用法：install.py')
+        manager = Path(__file__).resolve().parent.parent / 'plugin-manager/server.py'
+        os.execv(sys.executable, [sys.executable, str(manager), '--action', 'git', 'install'])
+
 import json
 import shutil
 import subprocess
@@ -30,7 +42,7 @@ def install():
     text=text.replace('this.syncPanel(space, panel, body, enabled);','this.syncPanel(space, panel, body, [...enabled, ...gitEnabled]);')
     (target/'main.js').write_text(text)
     mod=APP/'mods/git-workbench';mod.mkdir(exist_ok=True)
-    for name in ['backend.py','mod.json','git.svg']:shutil.copy2(SRC/name,mod/name)
+    for name in ['backend.py','mod.json',*(f.name for f in SRC.glob('*.svg'))]:shutil.copy2(SRC/name,mod/name)
     (mod/'main.js').write_text((SRC/'main.js').read_text().replace('GIT_BACKEND',str(mod/'backend.py')))
     for folder in [mod,target]:subprocess.run([str(BIN),'check',str(folder)],check=True)
     tabs['content']['mod']=target.name

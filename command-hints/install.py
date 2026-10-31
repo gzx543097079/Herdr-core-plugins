@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+
+# 独立运行时交给管理器组合布局；管理器调用时执行下方实际安装逻辑。
+if __name__ == '__main__':
+    import os
+    import sys
+    from pathlib import Path
+    if os.environ.get('HERDR_PLUGIN_COMPOSE') != '1':
+        if len(sys.argv) != 1:
+            raise SystemExit('用法：install.py')
+        manager = Path(__file__).resolve().parent.parent / 'plugin-manager/server.py'
+        os.execv(sys.executable, [sys.executable, str(manager), '--action', 'commands', 'install'])
+
 import json
 import shutil
 import subprocess
@@ -23,7 +35,7 @@ def install():
     status=find(layout,'status'); work=find(layout,'work')
     if not status or not work:raise RuntimeError('当前布局没有底部状态栏')
     mod=APP/'mods/command-hints';mod.mkdir(exist_ok=True)
-    shutil.copy2(SRC/'mod.json',mod/'mod.json');shutil.copy2(SRC/'skills.py',mod/'skills.py')
+    shutil.copy2(SRC/'mod.json',mod/'mod.json');[shutil.copy2(f,mod/f.name) for f in SRC.glob('*.svg')];shutil.copy2(SRC/'skills.py',mod/'skills.py')
     (mod/'main.js').write_text((SRC/'main.js').read_text().replace('SKILLS_SCRIPT',str(mod/'skills.py')))
     target=APP/'mods/command-hints-status';shutil.copytree(APP/'mods'/status['content']['mod'],target,dirs_exist_ok=True)
     source=(target/'main.js').read_text();anchor='      .child(div().flex_1())'

@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 """Clone the active desktop layout; patch only recognized native panel sources."""
+
+# 独立运行时交给管理器组合布局；管理器调用时执行下方实际安装逻辑。
+if __name__ == '__main__':
+    import os
+    import sys
+    from pathlib import Path
+    if os.environ.get('HERDR_PLUGIN_COMPOSE') != '1':
+        if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] != '--reduce-motion'):
+            raise SystemExit('用法：install.py [--reduce-motion]')
+        if '--reduce-motion' in sys.argv:
+            os.environ['HERDR_MOTION_REDUCED'] = '1'
+        manager = Path(__file__).resolve().parent.parent / 'plugin-manager/server.py'
+        os.execv(sys.executable, [sys.executable, str(manager), '--action', 'motion', 'install'])
+
 import argparse
 import json
 import shutil
@@ -139,6 +153,6 @@ def install(reduced=False):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--reduce-motion',action='store_true',help='保持性能优化，关闭过渡动画')
+    parser.add_argument('--reduce-motion',action='store_true',default=os.environ.get('HERDR_MOTION_REDUCED') == '1',help='保持性能优化，关闭过渡动画')
     args=parser.parse_args()
     install(args.reduce_motion)

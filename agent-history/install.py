@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+
+# 独立运行时交给管理器组合布局；管理器调用时执行下方实际安装逻辑。
+if __name__ == '__main__':
+    import os
+    import sys
+    from pathlib import Path
+    if os.environ.get('HERDR_PLUGIN_COMPOSE') != '1':
+        if len(sys.argv) != 1:
+            raise SystemExit('用法：install.py')
+        manager = Path(__file__).resolve().parent.parent / 'plugin-manager/server.py'
+        os.execv(sys.executable, [sys.executable, str(manager), '--action', 'history', 'install'])
+
 import json, shutil, subprocess
 from pathlib import Path
 
@@ -19,7 +31,7 @@ shutil.copy2(src/'history.py', store/'history.py')
 mod = app/'mods/agent-history'
 mod.mkdir(parents=True, exist_ok=True)
 shutil.copy2(src/'mod.json', mod/'mod.json')
-shutil.copy2(src/'sidebar-right.svg', mod/'sidebar-right.svg')
+for icon in src.glob('*.svg'): shutil.copy2(icon, mod/icon.name)
 codex_app = Path('/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex')
 codex = shutil.which('codex') or (str(codex_app) if codex_app.exists() else 'codex')
 claude = shutil.which('claude') or str(home/'.local/bin/claude')
