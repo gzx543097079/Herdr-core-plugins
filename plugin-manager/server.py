@@ -36,17 +36,45 @@ def chain(name):
         name=data.get('_git_base') or data.get('_commands_base') or data.get('_motion_base') or data.get('_history_base')
     return found
 
+def layout_features(tree):
+    mods = set()
+    ids = set()
+    def visit(value):
+        if isinstance(value, dict):
+            if isinstance(value.get('id'), str): ids.add(value['id'])
+            if isinstance(value.get('mod'), str): mods.add(value['mod'])
+            for child in value.values(): visit(child)
+        elif isinstance(value, list):
+            for child in value: visit(child)
+    visit(tree)
+    return {
+        'history': 'history-sidebar' in ids and 'agent-history' in mods,
+        'motion': {'desktop-motion-files', 'desktop-motion-changes'} <= mods,
+        'language': {'spaces-i18n', 'pane-i18n'} <= mods and tree.get('terminal_menu') == 'menu-i18n',
+        'commands': 'command-hints' in ids and {'command-hints', 'command-hints-status'} <= mods,
+        'git': 'git-workbench' in ids and {'git-workbench', 'git-workbench-tabs'} <= mods,
+    }
+
+
 def status():
     try:
         data=json.loads(run([BIN,'status'])); active=data['layout']; layers=chain(active)
-        try: last=json.loads((Path.home()/'.local/share/herdr-plugins/last-operation.json').read_text())
-        except (OSError,ValueError): last={}
-        return {'last_operation':last,'running':True,'layout':active,'errors':data.get('errors',[]),'plugins':{
+        tree=layout(active)
+        managed = active in ('main', 'main-i18n', 'agent-history-layout', 'desktop-motion-layout', 'command-hints-layout', 'git-workbench-layout', 'herdr-plugins')
+        if active == 'herdr-plugins':
+            metadata = APP/'plugin-controls'/'herdr-plugins.json'
+            plugins = json.loads(metadata.read_text())['state'] if metadata.exists() else layout_features(tree)
+        else:
+            plugins = layout_features(tree) if not managed else {
             'history':'agent-history-layout' in layers,
             'motion':'desktop-motion-layout' in layers,
             'language':'main-i18n' in layers,
             'commands':'command-hints-layout' in layers,
-            'git':'git-workbench-layout' in layers},'busy':LOCK.locked()}
+            'git':'git-workbench-layout' in layers}
+        try: last=json.loads((Path.home()/'.local/share/herdr-plugins/last-operation.json').read_text())
+        except (OSError,ValueError): last={}
+        return {'last_operation':last,'running':True,'layout':active,'errors':data.get('errors',[]),
+                'plugins':plugins,'managed':managed,'busy':LOCK.locked()}
     except Exception as e:
         return {'running':False,'error':str(e),'plugins':{},'busy':LOCK.locked()}
 
@@ -122,6 +150,19 @@ def apply(plugin, action):
     if plugin not in PLUGINS or action not in ('install','uninstall'):raise ValueError('未知操作')
     before=status()
     if not before['running']:raise RuntimeError('请先打开 Herdr，再刷新面板。')
+    if before.get('managed') is False:
+        raise RuntimeError('当前是独立布局副本，插件管理器无法安全修改其开关；请先切换到受管理的插件布局。')
+    if before.get('layout') == 'herdr-plugins':
+        import importlib.util
+        path = ROOT/'plugin-controls/composer.py'
+        spec = importlib.util.spec_from_file_location('plugin_controls_composer', path)
+        composer = importlib.util.module_from_spec(spec); spec.loader.exec_module(composer)
+        expected = dict(before['plugins']); expected[plugin] = action == 'install'
+        composer.compose(APP, 'herdr-plugins', {plugin: action == 'install'})
+        after = status()
+        if after.get('plugins') != expected:
+            raise RuntimeError('布局已更新，但插件状态未达到预期。')
+        return {'message': PLUGINS[plugin] + ('已开启' if action == 'install' else '已关闭'), 'status': after}
     active=before['plugins'].get('git',False)
     if plugin=='git':
         if action=='install':log=run([sys.executable,ROOT/'git-workbench/install.py'])
@@ -191,10 +232,10 @@ if __name__=='__main__':
             fcntl.flock(lock,fcntl.LOCK_EX)
             try:
                 result=apply(*args.action)
-                (store/'last-operation.json').write_text(json.dumps({'message':result['message']},ensure_ascii=False))
+                (store/'last-operation.json').write_text(json.dumps({'message':result['message'], 'id':secrets.token_hex(8)},ensure_ascii=False))
                 print(json.dumps(result,ensure_ascii=False))
             except Exception as e:
-                (store/'last-operation.json').write_text(json.dumps({'message':'操作失败：'+str(e)[:1200]},ensure_ascii=False))
+                (store/'last-operation.json').write_text(json.dumps({'message':'操作失败：'+str(e)[:1200], 'id':secrets.token_hex(8)},ensure_ascii=False))
                 raise
         sys.exit(0)
     server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)

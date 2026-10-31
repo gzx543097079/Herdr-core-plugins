@@ -2,13 +2,9 @@
 
 Herdr 桌面端插件集合。
 
-双击根目录的 [打开插件管理.command](打开插件管理.command)，构建并打开独立的 macOS 应用 **Herdr 插件管理.app**。
-也可直接打开已经生成的 app。管理器不嵌入 Herdr 设置，不需要浏览器或本地网页服务。
-首次构建需要 Xcode Command Line Tools；插件脚本部署到 `~/.local/share/herdr-plugins/`。
-
-每个插件独立显示状态，提供注入、重新注入、卸载按钮及操作日志。
-各目录的安装、卸载 `.command` 与外置管理器使用同一套组合逻辑，卸载一个插件保留其他插件，不删除对话记录。
-升级时会移除旧的“设置 → 插件”入口和它的后台任务。
+打开 Herdr 后，使用各插件目录中的安装、卸载 `.command` 管理功能。
+各入口使用同一套组合逻辑，卸载一个插件时保留其他插件，不删除对话记录。
+官方布局副本目前不能通过这些入口修改插件组合；请先切换到受管理的插件布局。
 不修改 Herdr 应用包；功能插件使用模块副本及派生布局。汉化另对生成的 frame 界面做可恢复的文字注入，与原版汉化方式一致。
 
 历史面板点击外部会收起；展开为 180ms 的轻移入和淡入，收起为 140ms 的轻移出和淡出。
@@ -49,7 +45,7 @@ Herdr 桌面端插件集合。
 
 ### Command Hints
 
-`command-hints/` 是独立的底部命令提示插件，外置管理器中显示为「命令提示」。
+`command-hints/` 是独立的底部命令提示插件。
 
 - 点击底部状态栏「命令提示」手动展开/收起；新布局默认折叠，Herdr 会记住之后的开关状态
 - 跟随当前聚焦终端里运行的 CLI 自动切换 Claude / Codex（绿点标出），也可手动切换；以六个紧凑列展示 24 项常用命令与控制提示，「终端启动」列用于 shell，其余为 CLI 内部命令；点击复制，不自动执行。Ctrl+C 项仅提示手动按键；窄窗口可横向滚动
@@ -58,12 +54,12 @@ Herdr 桌面端插件集合。
 - 每个目录最多检查 500 项，每个文件最多读取 8 KiB；长列表只绘制可见行
 - Claude 读取 `.claude/skills`、旧式 `.claude/commands`；Codex 读取 `.agents/skills`、`.codex/skills` 及用户 `.system`，支持链接目录；不扫描插件缓存，列表并非全部市场插件
 
-双击 [`command-hints/安装插件.command`](command-hints/安装插件.command)，或在外置管理器独立注入/卸载。
+双击 [`command-hints/安装插件.command`](command-hints/安装插件.command) 安装。
 命令参考：[Claude Code](https://code.claude.com/docs/en/commands)、[Codex CLI](https://developers.openai.com/codex/cli/slash-commands)。可用命令以本机 CLI 版本为准。
 
 ### Git 工作台
 
-`git-workbench/` 是独立的只读 Git 工作台插件，外置插件管理器中显示为「Git 工作台」。
+`git-workbench/` 是独立的只读 Git 工作台插件。
 
 - 右上角 Git 按钮打开右侧面板，与文件、改动、对话历史互斥
 - 自动跟随当前聚焦终端识别本地 Git 仓库；可切换「固定工作区」保持查看对象
@@ -78,7 +74,7 @@ Herdr 桌面端插件集合。
 - PR 只读 GitHub API，不执行 `git fetch`、提交、切换分支、推送、评论或合并；需要本机 `gh auth login`
 - 远程 SSH 终端第一版显示明确提示，避免把远程路径误当成本机仓库；后续可增加远程 core 读取
 
-安装：双击 [`git-workbench/安装插件.command`](git-workbench/安装插件.command)，或在外置插件管理器中单独注入。卸载不会改动仓库。
+安装：双击 [`git-workbench/安装插件.command`](git-workbench/安装插件.command)。卸载不会改动仓库。
 
 ### Herdr Lang
 
