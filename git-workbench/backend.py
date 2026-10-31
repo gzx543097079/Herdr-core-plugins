@@ -71,7 +71,7 @@ def graph(root,params):
     scope=params.get('scope','all');query=str(params.get('query',''))[:200]
     if scope not in ('all','HEAD') and scope not in info['refs']:raise ValueError('所选分支已不存在，请刷新')
     def read():
-        args=['log','--graph','--no-color','--topo-order','--date=short',f'--max-count={limit}', '--format=%x1f%H%x1f%P%x1f%an%x1f%ad%x1f%D%x1f%s']
+        args=['log','--no-color','--topo-order','--date=short',f'--max-count={limit}', '--format=%x1f%H%x1f%P%x1f%an%x1f%ad%x1f%at%x1f%D%x1f%s']
         if query.startswith('author:'):args+=['--fixed-strings','--author='+query[7:]]
         elif query:args+=['--fixed-strings','--regexp-ignore-case','--grep='+query]
         args+=['--all'] if scope=='all' else [scope]
@@ -79,14 +79,13 @@ def graph(root,params):
         if not info['head'] and not info['refs']:return {'rows':[],'more':False,'limit':limit}
         rows=[];commits=0
         for line in git(root,*args).splitlines():
-            bits=line.split('\x1f',6)
-            if len(bits)==7:
-                lane,sha,parents,author,date,refs,title=bits;commits+=1
-                rows.append(dict(key=sha,graph=lane,sha=sha,parents=parents.split(),author=author,date=date,refs=refs,title=title))
-            else:rows.append(dict(key='line-'+str(len(rows)),graph=line))
+            bits=line.split('\x1f',7)
+            if len(bits)==8:
+                _,sha,parents,author,date,stamp,refs,title=bits;commits+=1
+                rows.append(dict(key=sha,sha=sha,parents=parents.split(),author=author,date=date,time=int(stamp or 0),refs=refs,title=title))
         return {'rows':rows,'more':commits>=limit and limit<5000,'limit':limit}
     # Decorations include worktree-specific HEAD and branch, even with --all.
-    value=cached(['graph-v2',info['common'],info['gitdir'],info['head'],info['branch'],scope,query,limit],30,params.get('force'),read)
+    value=cached(['graph-v3',info['common'],info['gitdir'],info['head'],info['branch'],scope,query,limit],30,params.get('force'),read)
     return dict(value,meta=info)
 
 def changes(root):
