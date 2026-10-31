@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Loopback-only Herdr plugin manager. No arbitrary command or filesystem endpoints."""
+"""为 Herdr 布局提供本机插件状态和组合操作。"""
 import argparse
 import os
 import json
@@ -7,8 +7,6 @@ import secrets
 import subprocess
 import sys
 import threading
-import webbrowser
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent.parent
@@ -178,37 +176,8 @@ def apply(plugin, action):
     if active:result['status']=status()
     return result
 
-class Handler(BaseHTTPRequestHandler):
-    def log_message(self,*args): pass
-    def send(self,code,body,kind='application/json; charset=utf-8'):
-        raw=body.encode() if isinstance(body,str) else json.dumps(body,ensure_ascii=False).encode()
-        self.send_response(code);self.send_header('Content-Type',kind)
-        self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff')
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'")
-        self.end_headers();self.wfile.write(raw)
-    def valid_host(self):
-        return self.headers.get('Host')==f'127.0.0.1:{self.server.server_port}'
-    def do_GET(self):
-        if not self.valid_host(): return self.send(403,{'error':'Invalid host'})
-        if self.path=='/': return self.send(200,(Path(__file__).with_name('index.html')).read_text().replace('__TOKEN__',TOKEN),'text/html; charset=utf-8')
-        if self.path=='/api/status': return self.send(200,status())
-        return self.send(404,{'error':'Not found'})
-    def do_POST(self):
-        if not self.valid_host() or self.headers.get('X-Plugin-Token')!=TOKEN:
-            return self.send(403,{'error':'请重新打开本地管理面板'})
-        if self.path!='/api/action': return self.send(404,{'error':'Not found'})
-        if not LOCK.acquire(False): return self.send(409,{'error':'正在处理另一个操作，请稍候'})
-        try:
-            length=int(self.headers.get('Content-Length','0'))
-            if not 0<length<2048: raise ValueError('无效请求')
-            data=json.loads(self.rfile.read(length)); result=apply(data.get('plugin'),data.get('action'))
-            self.send(200,result)
-        except Exception as e: self.send(400,{'error':str(e),'status':status()})
-        finally: LOCK.release()
-
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--no-browser',action='store_true');parser.add_argument('--port',type=int,default=0)
     parser.add_argument('--status',action='store_true')
     parser.add_argument('--action',nargs=2,metavar=('PLUGIN','ACTION'))
     parser.add_argument('--launch-action',nargs=2,metavar=('PLUGIN','ACTION'))
@@ -238,10 +207,4 @@ if __name__=='__main__':
                 (store/'last-operation.json').write_text(json.dumps({'message':'操作失败：'+str(e)[:1200], 'id':secrets.token_hex(8)},ensure_ascii=False))
                 raise
         sys.exit(0)
-    server=ThreadingHTTPServer(('127.0.0.1',args.port),Handler)
-    url=f'http://127.0.0.1:{server.server_port}/'
-    print(url,flush=True)
-    if not args.no_browser: webbrowser.open(url)
-    try: server.serve_forever()
-    except KeyboardInterrupt: pass
-    finally: server.server_close()
+    parser.error('请指定 --status、--action 或 --launch-action')

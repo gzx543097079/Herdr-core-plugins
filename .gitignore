@@ -7,3 +7,5 @@ __pycache__/
 # Herdr check generates local editor support
 git-workbench/gpui-kit.d.ts
 git-workbench/jsconfig.json
+layouts/herdr-plugins/mods/*/gpui-kit.d.ts
+layouts/herdr-plugins/mods/*/jsconfig.json
