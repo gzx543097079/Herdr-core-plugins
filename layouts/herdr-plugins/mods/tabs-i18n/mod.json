@@ -1,0 +1,8 @@
+{
+  "place": "none",
+  "title": "标签页",
+  "cloned_from": {
+    "name": "tabs",
+    "version": "0.1.10"
+  }
+}

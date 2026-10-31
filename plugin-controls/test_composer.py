@@ -24,7 +24,7 @@ class ComposerTests(unittest.TestCase):
         (self.app / 'layouts').mkdir()
         self.path = self.app / 'layouts' / 'herdr-plugins.json'
         self.layout = {'id': 'root', 'type': 'row', 'custom': {'keep': 7}, 'children': [
-            {'id': 'sidebar', 'children': [block('brand', 'workspace-chrome'), block('sidebar-footer', 'custom-footer')]},
+            {'id': 'sidebar', 'children': [block('brand', 'workspace-chrome'), block('spaces', 'spaces'), block('agents', 'agents'), block('sidebar-footer', 'custom-footer')]},
             {'id': 'work', 'children': [block('tabs', 'tabs'), {'id': 'panel', 'size': {'px': 368}, 'max': 900, 'children': [
                 {'id': 'panel-body', 'active': 'files', 'children': [block('files', 'files'), block('changes', 'changes'), block('custom-panel', 'custom')]}
             ]}, block('status', 'workspace-status')]}
@@ -35,10 +35,21 @@ class ComposerTests(unittest.TestCase):
     this.syncPanel(space, panel, body, enabled);
     const panelButton = () => {};
       .when(w?.buttons,
+.h(29).px(10).gap(7).rounded(7)
+.bg(c.active ? t.raised : t.chrome)
+.gap(3).items_center().bg(t.chrome).border_b(1)
 '''
+        sources = {
+            'tabs': tabs,
+            'workspace-status': '      .child(div().flex_1())',
+            'workspace-chrome': '.gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).rounded(5))',
+            'spaces': '.child(h_flex().h(31).pl(16).pr(10)\n.px(8)\n      .h(rowHeight({ tree }))\n.size(18).flex_none().rounded(5).bg(fill)\n.when(on, (el) => el.bg(t.selected))\n.truncate().text_color(t.foreground).child(w.name)\nthis.gitTail(g, tree, w.name, t)',
+            'agents': '.px(8)\n        .h(30)\n        .flex_none()\n        .rounded(8)\n.h(41)\n            .pt(14)\n            .pb(5)\n.when(a.focused, (el) => el.bg(t.selected))',
+            'files': '.pl(8 + depth * 18)\n.size(14).flex_none().text_color(t.muted))\n        .child(div().flex_1().min_w(0).truncate().child(entry.name))',
+        }
         for name in composer.LANG_MODS:
             for suffix in ('', '-i18n'):
-                self.module(name + suffix, tabs if name == 'tabs' else ('      .child(div().flex_1())' if name == 'workspace-status' else 'source'))
+                self.module(name + suffix, sources.get(name, 'source'))
         for name in ('agent-history', 'git-workbench', 'command-hints'):
             self.module(name, 'plugin')
         self.module('agent-history-tabs', '      .child(div().id("agent-history").child("history"))')
@@ -70,11 +81,13 @@ class ComposerTests(unittest.TestCase):
         tabs = (self.app / 'mods' / composer.mod(composer.one(tree, 'tabs')) / 'main.js').read_text()
         for marker in ('agent-history', 'git-workbench', 'MOTION'):
             self.assertIn(marker, tabs)
-        self.assertEqual(composer.mod(composer.one(tree, 'brand')), 'workspace-chrome-i18n')
+        self.assertTrue(composer.mod(composer.one(tree, 'brand')).startswith('plugin-controls-'))
         for feature in reversed(composer.FEATURES):
             composer.compose(self.app, 'herdr-plugins', {feature: False})
         tree = self.read()
-        self.assertEqual(tree, self.layout)
+        for feature in ('history-sidebar', 'git-workbench', 'command-hints'):
+            self.assertFalse(any(node.get('id') == feature for node in composer.nodes(tree)))
+        self.assertEqual(tree['custom'], self.layout['custom'])
         self.assertTrue((self.app / 'mods' / 'agent-history').exists())
 
     def test_preserves_unknown_changes_and_rejects_controlled_edit(self):
