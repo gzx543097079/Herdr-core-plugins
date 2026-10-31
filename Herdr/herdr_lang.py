@@ -1,20 +1,10 @@
 #!/usr/bin/env python3
-"""herdr-lang：Herdr 桌面端语言插件。
+"""Herdr 桌面端语言插件：模块副本、派生布局与可恢复的 frame 汉化。
 
-Herdr 没有多语言系统，界面文字直接写在 ~/.config/herdr-app 下的 JS 文件里：
-  - mods/   侧边栏、标签栏、菜单等。自带的只读，启动时会被还原
-            → 复制成 <mod>-i18n 再翻译，并复制主布局为 main-i18n 指向它们。
-  - frame/  设置页、命令面板、欢迎页等。每次启动都会被重写
-            → 后台任务（launchd）监听重写，自动重新注入。
-这个插件把翻译放在 lang/<代码>.json 语言包里，并在「设置 › 外观」最上面注入一个
-「语言」选择器，点一下就切换。
-
-用法：
-  python3 herdr_lang.py install [语言代码]   安装插件（默认 zh-CN）
-  python3 herdr_lang.py set <语言代码|en>     切换语言（设置页里的选择器调用的就是它）
-  python3 herdr_lang.py uninstall             卸载插件，恢复原版
-  python3 herdr_lang.py status                查看状态
-  python3 herdr_lang.py frame                 重新注入（后台任务用）
+不修改应用包。恢复设置、命令面板等生成界面的汉化，并保留备份。
+文件变化时按需恢复汉化，内容一致时不重写。
+命令：install [语言代码]、set <语言代码|en>、uninstall、status。
+frame 是后台事件监听的重注入入口。
 """
 
 import fcntl
@@ -174,6 +164,12 @@ def translate(src, table, keep=()):
     return replace_words(src, table.get("words", {}), keep)
 
 
+def translated_mod_refs(src):
+    """Route frame and cloned-mod dialogs to the same translated copies."""
+    names = "|".join(re.escape(m) for m in MODS)
+    return re.sub(rf'((?:mod|name):\s*)"({names})"', rf'\1"\2{SUFFIX}"', src)
+
+
 def translate_palette(src, table):
     # 命令条目 [命令, 参数, "分组", "标题", "搜索词"]：标题翻译，英文标题并入搜索词，英文照样能搜
     words = table.get("words", {})
@@ -301,6 +297,7 @@ def patch_frames(code):
             errors.append(str(e))
         if pack:
             out = translate_palette(out, table) if name == "palette" else translate(out, table)
+            out = translated_mod_refs(out)
         # 没有任何改动（英文且不需要注入）就写回原文，否则加标记写入
         want = src if out == src else MARK + out
         if js.read_text(encoding="utf-8") != want:
@@ -351,7 +348,6 @@ def build_mods(code):
     keep = set(table.get("keep_english", []))
     remove_mod_clones()
 
-    names = "|".join(re.escape(m) for m in MODS)
     for m in MODS:
         if not (MODS_DIR / m).is_dir():
             continue
@@ -361,7 +357,7 @@ def build_mods(code):
         js = d / "main.js"
         src = js.read_text(encoding="utf-8")
         # mod 之间互相打开的弹窗也指向翻译过的副本
-        src = re.sub(rf'((?:mod|name):\s*)"({names})"', rf'\1"\2{SUFFIX}"', src)
+        src = translated_mod_refs(src)
         js.write_text(translate(src, table, keep), encoding="utf-8")
         mj = d / "mod.json"
         if mj.exists():
@@ -485,7 +481,7 @@ def cmd_install(code="zh-CN"):
     save_config(cfg)
     cmd_set(code, force=True)
     install_agent()
-    log(f"✅ 插件已安装，当前语言：{code}。以后可在「设置 › 外观 › 语言」里切换。")
+    log(f"✅ 插件已安装，当前语言：{code}。可在插件管理面板中注入或卸载。")
 
 
 @locked
@@ -518,14 +514,10 @@ def reopen_settings():
 
 @locked
 def cmd_frame():
-    """后台任务：frame 被 Herdr 重写后重新注入；Herdr 升级后顺便重建 mod 翻译。"""
-    code = load_config().get("lang", "en")
+    """Restore translations after Herdr regenerates its frame files."""
+    code = load_config().get('lang', 'en')
     patch_frames(code)
-    if code != "en" and wait_app(start=False, seconds=30):
-        built = load_config().get("mods_built") or {}
-        if built.get("app") != app_version() or built.get("lang") != code:
-            log(f"{time.strftime('%F %T')} Herdr 版本变了，重建 mod 翻译")
-            build_mods(code)
+    # Do not switch the active layout from this background task.
 
 
 def cmd_uninstall():
@@ -553,6 +545,13 @@ def cmd_status():
 if __name__ == "__main__":
     args = sys.argv[1:] or ["install"]
     cmd, rest = args[0], args[1:]
+    # Every public install/uninstall entrypoint preserves the other active layers.
+    if not os.environ.get('HERDR_PLUGIN_COMPOSE') and cmd in ('install', 'uninstall'):
+        candidates = [Path(__file__).resolve().parent.parent/'plugin-manager/server.py',
+                      Path.home()/'.local/share/herdr-plugins/plugin-manager/server.py']
+        manager = next((p for p in candidates if p.exists()), None)
+        if manager:
+            raise SystemExit(subprocess.run([sys.executable, str(manager), '--action', 'language', cmd]).returncode)
     if cmd == "install":
         cmd_install(*(rest[:1] or ["zh-CN"]))
     elif cmd == "set" and rest:

@@ -1,39 +1,14 @@
-herdr-lang —— Herdr 桌面端语言插件
-==================================
+Herdr 桌面端简体中文插件
 
-【安装】双击「安装插件.command」，默认切换为简体中文。
-【切换语言】Herdr → 设置 → 外观 → 最上面的「语言」：English / 简体中文。
-【卸载】双击「卸载插件.command」，Herdr 恢复原版英文。
-【Herdr 升级后】不用管：插件会在 Herdr 启动时自动重新注入，版本变了会自动重建翻译。
+【安装】双击本目录「安装插件.command」，或在独立的「Herdr 插件管理.app」中点击简体中文的注入按钮。
+【卸载】双击本目录「卸载插件.command」，或在外置管理器中点击简体中文的卸载按钮。
+这些入口统一调用插件组合管理器，保留已经启用的对话历史和桌面动效插件。
 
-文件
-----
-  herdr_lang.py       注入程序
-  lang/zh-CN.json     简体中文语言包（所有翻译都在这里）
-安装后会复制到 ~/.local/share/herdr-lang/（桌面受 macOS 隐私保护，后台任务读不到桌面），
-所以改了语言包后要再双击一次「安装插件.command」。
+汉化范围恢复为原版：工作区、标签栏、菜单、文件、改动，以及设置页、命令面板、欢迎页等。
+官方 mods 复制成 xxx-i18n 后翻译，通过 main-i18n 派生布局使用。
+生成的 frame 界面在注入前保留原文备份，卸载时还原；不修改 Herdr 应用包。
+文件事件监听会在 Herdr 重新生成 frame 时恢复中文，内容不变不会重复写入。
 
-加一种语言
-----------
-复制 lang/zh-CN.json 为 lang/<代码>.json（如 zh-TW.json），改掉 code、name、layout_name 和
-里面的译文，再双击「安装插件.command」，设置里的语言选择器就会多出这个选项。
-语言包结构：
-  mods.words      侧边栏、标签栏、菜单等的整句翻译  "英文": "译文"
-  mods.fragments  带变量的句子，按片段替换          ["原文片段", "译文片段"]
-  frame.words     设置页、命令面板、欢迎页、反馈页的整句翻译
-  frame.palette_groups  命令面板分组名
-
-原理
-----
-Herdr 没有多语言系统，界面文字直接写在 ~/.config/herdr-app 下的 JS 文件里：
-  - mods/：自带的只读，启动时会被还原 → 复制成 xxx-i18n 再翻译，并复制主布局为
-    main-i18n（设置里显示为「Herdr 中文」）指向它们。
-  - frame/（设置页、命令面板、欢迎页、反馈、更新说明）：每次启动都被重写 →
-    后台任务 ~/Library/LaunchAgents/com.herdr-lang.frame.plist 监听到重写就重新注入。
-原版文件不动，英文原文备份在 ~/.local/share/herdr-lang/frame-orig/。
-
-翻译不到的
-----------
-快捷键帮助、确认框、通知、空白页提示 “No space open”、macOS 顶部菜单：
-这些文字编译在 Herdr 主程序里，改了会破坏 App 签名，所以不动。
-另外，只有 Herdr 主布局有翻译，切到 Terminals / Herdr 98 布局仍是英文。
+管理器不再注入「设置 → 插件」。
+Herdr 升级后，可以在外置管理器点击重新注入来更新模块副本。
+语言包：lang/zh-CN.json。安装目录：~/.local/share/herdr-lang/。

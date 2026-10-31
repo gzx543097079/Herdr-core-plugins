@@ -2,6 +2,18 @@
 
 Herdr 桌面端插件集合。
 
+双击根目录的 [打开插件管理.command](打开插件管理.command)，构建并打开独立的 macOS 应用 **Herdr 插件管理.app**。
+也可直接打开已经生成的 app。管理器不嵌入 Herdr 设置，不需要浏览器或本地网页服务。
+首次构建需要 Xcode Command Line Tools；插件脚本部署到 `~/.local/share/herdr-plugins/`。
+
+每个插件独立显示状态，提供注入、重新注入、卸载按钮及操作日志。
+各目录的安装、卸载 `.command` 与外置管理器使用同一套组合逻辑，卸载一个插件保留其他插件，不删除对话记录。
+升级时会移除旧的“设置 → 插件”入口和它的后台任务。
+不修改 Herdr 应用包；功能插件使用模块副本及派生布局。汉化另对生成的 frame 界面做可恢复的文字注入，与原版汉化方式一致。
+
+历史面板点击外部会收起；展开为 180ms 的轻移入和淡入，收起为 140ms 的轻移出和淡出。
+动画由原生 GPUI 执行，延迟隐藏带状态校验，避免误关闭切换后的文件、改动面板。
+
 ## 插件
 
 ### Agent History
@@ -9,12 +21,44 @@ Herdr 桌面端插件集合。
 `agent-history/` 用于检索本机 Claude Code 和 Codex 的对话历史：
 
 - Claude 和 Codex 分开显示，并使用对应图标
-- 按项目文件夹分组，支持折叠和展开
+- 按项目文件夹分组，只显示文件夹名称，完整路径仍可搜索
+- 默认折叠，同时只展开一个文件夹；无分页，连续滚动时只绘制可见行
+- 文件、改动和对话历史共用同一个互斥右侧面板
 - 支持按智能体、项目路径和对话标题搜索
 - 双击记录，在新的 Herdr 标签页中恢复对话
 - 只读取本机记录，不上传对话内容
 
 安装方式：打开 Herdr 后，双击 [`agent-history/安装插件.command`](agent-history/安装插件.command)。
+
+### Desktop Motion
+
+`desktop-motion/` 是独立的桌面动效与面板性能插件，可与对话历史插件叠加使用。
+
+- 标签、文件/改动按钮选中状态使用 140ms 原生透明度过渡
+- 文件和改动面板由加载态平滑过渡到内容态；不使用全局动画广播或逐帧 JS 计时器
+- 文件树与改动文件列表只构建可见行，避免长列表完整渲染
+- 文件目录先显示，Git 状态稍后补充；改动列表先显示，差异预览随后加载
+- 合并 180ms 内的文件变化通知，避免构建过程反复触发 Git 查询
+
+打开 Herdr 后运行 `python3 desktop-motion/install.py`，或双击
+[`desktop-motion/安装插件.command`](desktop-motion/安装插件.command)。
+`python3 desktop-motion/install.py --reduce-motion` 关闭过渡，保留性能优化。
+恢复安装前布局：`~/.local/bin/herdr-app do layout.switch '{"name":"agent-history-layout"}'`
+（独立安装时使用安装输出中的原布局名称）。不会修改官方模块。
+
+### Command Hints
+
+`command-hints/` 是独立的底部命令提示插件，外置管理器中显示为「命令提示」。
+
+- 点击底部状态栏「命令提示」手动展开/收起；新布局默认折叠，Herdr 会记住之后的开关状态
+- 切换 Claude / Codex，以六个紧凑列展示 24 项常用命令与控制提示，「终端启动」列用于 shell，其余为 CLI 内部命令；点击复制，不自动执行。Ctrl+C 项仅提示手动按键；窄窗口可横向滚动
+- 右侧 Skill 默认隐藏，首次展开才读取本地用户/当前项目的 Skill；切换项目后点击刷新加载
+- 按项目和 CLI 缓存最多 12 份列表，手动刷新；没有轮询、全盘递归扫描或后台监视
+- 每个目录最多检查 500 项，每个文件最多读取 8 KiB；长列表只绘制可见行
+- Claude 读取 `.claude/skills`、旧式 `.claude/commands`；Codex 读取 `.agents/skills`、`.codex/skills` 及用户 `.system`，支持链接目录；不扫描插件缓存，列表并非全部市场插件
+
+双击 [`command-hints/安装插件.command`](command-hints/安装插件.command)，或在外置管理器独立注入/卸载。
+命令参考：[Claude Code](https://code.claude.com/docs/en/commands)、[Codex CLI](https://developers.openai.com/codex/cli/slash-commands)。可用命令以本机 CLI 版本为准。
 
 ### Herdr Lang
 
