@@ -9,7 +9,8 @@ final class PluginManager: NSObject, NSApplicationDelegate {
     let plugins = [("history", "对话历史", "按文件夹浏览 Claude / Codex 记录，双击恢复对话。"),
                    ("motion", "桌面动效", "原生轻量过渡，优化文件和改动列表的读取、绘制。"),
                    ("language", "简体中文", "恢复工作区、设置、命令面板等界面的简体中文。"),
-                   ("commands", "命令提示", "底部紧凑命令提示，切换 Claude / Codex，按需展开 Skill。") ]
+                   ("commands", "命令提示", "底部紧凑命令提示，切换 Claude / Codex，按需展开 Skill。"),
+                   ("git", "Git 工作台", "提交树、差异与 PR，跟随当前终端或固定工作区。") ]
     var busy = false
     var script: String { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/share/herdr-plugins/plugin-manager/server.py").path }
     func label(_ text: String, size: CGFloat = 13, bold: Bool = false) -> NSTextField {
@@ -18,7 +19,7 @@ final class PluginManager: NSObject, NSApplicationDelegate {
         return field
     }
     func applicationDidFinishLaunching(_ note: Notification) {
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 780, height: 660), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 780, height: 750), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = "Herdr 插件管理"
         window.isReleasedWhenClosed = false
         let root = NSStackView(); root.orientation = .vertical; root.alignment = .leading; root.spacing = 18

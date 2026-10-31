@@ -16,7 +16,7 @@ APP=Path.home()/'.config/herdr-app'
 BIN=Path.home()/'.local/bin/herdr-app'
 TOKEN=secrets.token_urlsafe(32)
 LOCK=threading.Lock()
-PLUGINS={'history': '对话历史', 'motion':'桌面动效', 'language':'简体中文', 'commands':'命令提示'}
+PLUGINS={'history': '对话历史', 'motion':'桌面动效', 'language':'简体中文', 'commands':'命令提示', 'git':'Git 工作台'}
 
 def run(args):
     env = dict(os.environ)
@@ -33,7 +33,7 @@ def chain(name):
     while name and name not in found:
         found.append(name)
         data=layout(name)
-        name=data.get('_commands_base') or data.get('_motion_base') or data.get('_history_base')
+        name=data.get('_git_base') or data.get('_commands_base') or data.get('_motion_base') or data.get('_history_base')
     return found
 
 def status():
@@ -45,7 +45,8 @@ def status():
             'history':'agent-history-layout' in layers,
             'motion':'desktop-motion-layout' in layers,
             'language':'main-i18n' in layers,
-            'commands':'command-hints-layout' in layers},'busy':LOCK.locked()}
+            'commands':'command-hints-layout' in layers,
+            'git':'git-workbench-layout' in layers},'busy':LOCK.locked()}
     except Exception as e:
         return {'running':False,'error':str(e),'plugins':{},'busy':LOCK.locked()}
 
@@ -96,7 +97,7 @@ def apply_base(plugin, action):
     return {'message':PLUGINS[plugin]+('已注入' if action=='install' else '已卸载'),
             'log':'\n'.join(output), 'status':after}
 
-def apply(plugin, action):
+def apply_commands(plugin, action):
     if plugin not in PLUGINS or action not in ('install','uninstall'): raise ValueError('未知操作')
     before=status()
     if not before['running']: raise RuntimeError('请先打开 Herdr，再刷新面板。')
@@ -115,6 +116,25 @@ def apply(plugin, action):
     finally:
         if hints: run([sys.executable,ROOT/'command-hints/install.py'])
     if hints: result['status']=status()
+    return result
+
+def apply(plugin, action):
+    if plugin not in PLUGINS or action not in ('install','uninstall'):raise ValueError('未知操作')
+    before=status()
+    if not before['running']:raise RuntimeError('请先打开 Herdr，再刷新面板。')
+    active=before['plugins'].get('git',False)
+    if plugin=='git':
+        if action=='install':log=run([sys.executable,ROOT/'git-workbench/install.py'])
+        elif active:log=switch(layout('git-workbench-layout')['_git_base'])
+        else:log='Git 工作台已停用'
+        after=status();expected=dict(before['plugins']);expected['git']=action=='install'
+        if after['plugins']!=expected:raise RuntimeError('插件组合验证失败')
+        return {'message':'Git 工作台'+('已注入' if action=='install' else '已卸载'),'log':log,'status':after}
+    if active:switch(layout('git-workbench-layout')['_git_base'])
+    try:result=apply_commands(plugin,action)
+    finally:
+        if active:run([sys.executable,ROOT/'git-workbench/install.py'])
+    if active:result['status']=status()
     return result
 
 class Handler(BaseHTTPRequestHandler):

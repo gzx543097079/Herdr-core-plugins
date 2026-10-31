@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parent.parent
 STORE=Path.home()/'.local/share/herdr-plugins'
 # Remove only the old settings-manager hook, before restoring full Chinese.
 subprocess.run(['/usr/bin/python3',str(ROOT/'plugin-manager/settings_integration.py'),'uninstall'],check=True)
-for name in ('agent-history','desktop-motion','command-hints','Herdr','plugin-manager'):
+for name in ('agent-history','desktop-motion','command-hints','git-workbench','Herdr','plugin-manager'):
     shutil.copytree(ROOT/name,STORE/name,dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
 bundle=ROOT/'Herdr 插件管理.app'
 binary=bundle/'Contents/MacOS/HerdrPluginManager';binary.parent.mkdir(parents=True,exist_ok=True)

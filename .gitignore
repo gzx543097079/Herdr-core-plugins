@@ -3,3 +3,7 @@ __pycache__/
 *.py[cod]
 
 *.app/
+
+# Herdr check generates local editor support
+git-workbench/gpui-kit.d.ts
+git-workbench/jsconfig.json

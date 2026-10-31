@@ -51,4 +51,11 @@ class CommandCompositionTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):m.apply('motion','install')
             self.assertIn('command-hints/install.py',str(run.call_args))
 
+    def test_git_layer_is_composable(self):
+        before={'running':True,'plugins':{'git':True,'commands':True,'history':True,'motion':True,'language':True}}
+        with patch.object(m,'status',return_value=before),patch.object(m,'layout',return_value={'_git_base':'base'}),patch.object(m,'switch') as switch,patch.object(m,'apply_commands',return_value={}) as base,patch.object(m,'run') as run:
+            m.apply('history','uninstall')
+            switch.assert_called_once_with('base');base.assert_called_once_with('history','uninstall')
+            self.assertIn('git-workbench/install.py',str(run.call_args))
+
 if __name__=='__main__':unittest.main()
