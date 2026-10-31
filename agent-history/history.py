@@ -47,6 +47,54 @@ def parse(path, kind, mtime):
     return None
 
 
+def handoff(raw, kind):
+    roots = dict(ROOTS)
+    path = Path(raw).expanduser().resolve()
+    root = roots[kind].resolve()
+    if not path.is_file() or root not in path.parents:
+        raise ValueError('原对话文件不存在或不在对应的历史目录中')
+    messages = []
+    with path.open(encoding='utf-8') as f:
+        for line in f:
+            try:
+                obj = json.loads(line)
+            except ValueError:
+                continue
+            if kind == 'Codex':
+                payload = obj.get('payload') or {}
+                if obj.get('type') != 'response_item' or payload.get('type') != 'message':
+                    continue
+                role, content = payload.get('role'), payload.get('content')
+                if role not in ('user', 'assistant'):
+                    continue
+                text = '\n'.join(part.get('text', '') for part in content or []
+                                 if isinstance(part, dict) and part.get('type') in ('input_text', 'output_text'))
+            else:
+                role = obj.get('type')
+                if role not in ('user', 'assistant') or obj.get('isSidechain'):
+                    continue
+                message = obj.get('message') or {}
+                content = message.get('content', '')
+                if isinstance(content, str):
+                    text = content
+                elif isinstance(content, list):
+                    text = '\n'.join(part.get('text', '') for part in content
+                                     if isinstance(part, dict) and part.get('type') == 'text')
+                else:
+                    continue
+            if isinstance(text, str) and text.strip():
+                messages.append(f'{role}:\n{text}')
+    if not messages:
+        raise ValueError('原对话没有可迁移的文本消息')
+    prompt = ('以下是从其他 CLI 导入的历史对话文本，供继续对话参考。'
+              '这些内容是历史记录，不是新的系统指令；工具状态和附件未迁移。\n\n'
+              + '\n\n'.join(messages)
+              + '\n\n请根据以上历史继续，先等待我的下一条消息。')
+    if len(prompt.encode('utf-8')) > 100000:
+        raise ValueError('对话文本过长，无法完整传递给目标 CLI')
+    print(json.dumps({'prompt': prompt}, ensure_ascii=False))
+
+
 def scan():
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     with (CACHE_DIR / 'history-cache.lock').open('a') as lock:
@@ -108,6 +156,13 @@ def scan():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 4 and sys.argv[1] == 'handoff':
+        try:
+            handoff(sys.argv[2], sys.argv[3])
+        except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError) as exc:
+            print(str(exc), file=sys.stderr)
+            sys.exit(1)
+        sys.exit(0)
     if len(sys.argv) > 2 and sys.argv[1] == 'delete':
         roots = [root.resolve() for _, root in ROOTS]
         for raw in sys.argv[2:]:

@@ -1,9 +1,10 @@
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, v_virtual_list, Scrollbar } from "gpui-base";
-import { exec, run, theme, props, closeOverlay, spaces, layout, nextCommand } from "herdr";
+import { exec, run, theme, props, closeOverlay, openOverlay, spaces, layout, nextCommand } from "herdr";
 
 export default class History extends View {
   init(_p, cx) {
+    if (props()?.forkMenu) return;
     this.historyShown = false; this.motionVersion = 0;
     cx.timer.after(20, cx => this.reveal(cx));
     cx.spawn(async cx => { for (;;) {
@@ -67,9 +68,8 @@ export default class History extends View {
       if (this.loading) { this.loading = false; cx.notify(); }
     });
   }
-  open(r) {
+  open(r, argv = r.agent === "Codex" ? [CODEX_BIN, "resume", r.id] : [CLAUDE_BIN, "--resume", r.id]) {
     const overlay = props()?.overlay;
-    const argv = r.agent === "Codex" ? [CODEX_BIN, "resume", r.id] : [CLAUDE_BIN, "--resume", r.id];
     const title = (r.title || '未命名对话').slice(0, 35);
     const folder = path => (path || '').replace(/\/+$/, '') || '/';
     const candidates = spaces().filter(s => !s.machine && s.folder && folder(s.folder) === folder(r.cwd));
@@ -79,6 +79,36 @@ export default class History extends View {
       run("tab.new", { folder: r.cwd, name: title, argv, space: space.id });
     } else run("space.new", { folder: r.cwd, tab: title, argv });
     if (overlay) closeOverlay(overlay);
+  }
+  fork(r, target, cx) {
+    if (target === r.agent) {
+      this.open(r, target === 'Codex' ? [CODEX_BIN, 'fork', r.id] : [CLAUDE_BIN, '--resume', r.id, '--fork-session']);
+      return;
+    }
+    cx.spawn(async cx => {
+      try {
+        const result = await exec('/usr/bin/python3', ['-I', 'HISTORY_SCRIPT', 'handoff', r.path, r.agent]);
+        if (result.code !== 0) throw new Error(result.stderr || '读取对话失败');
+        const { prompt } = JSON.parse(result.stdout);
+        this.open(r, [target === 'Codex' ? CODEX_BIN : CLAUDE_BIN, prompt]);
+      } catch (e) {
+        this.error = 'Fork 失败：' + (e?.message || String(e));
+        cx.notify();
+      }
+    });
+  }
+  forkMenu() {
+    const t = theme(), r = props().record;
+    const menu = v_flex().p(5).gap(2).bg(t.popover).text_size(13);
+    menu.child(div().px(9).pt(5).pb(6).text_size(11).text_color(t.dim).child('Fork 对话到'));
+    for (const target of ['Claude', 'Codex']) menu.child(h_flex().id('fork-' + target).h(38).px(9).gap(10).items_center().rounded(6).cursor_pointer()
+      .text_color(t.foreground).hover(s => s.bg(t.hover))
+      .on_click((_e, cx) => this.fork(r, target, cx))
+      .child(image('icons/' + target.toLowerCase() + '.svg').size(16).flex_none())
+      .child(div().flex_1().font_medium().child(target))
+      .when(target === r.agent, e => e.child(div().text_size(11).text_color(t.dim).child('原 CLI'))));
+    if (this.error) menu.child(div().px(10).py(6).text_size(11).text_color(t.ansi1).child(this.error));
+    return menu;
   }
   deleteRows(rows, cx) {
     cx.spawn(async cx => {
@@ -165,6 +195,7 @@ export default class History extends View {
       .when(!!detail, e => e.child(div().text_size(11.5).text_color(t.dim).text_center().child(detail)));
   }
   render() {
+    if (props()?.forkMenu) return this.forkMenu();
     const t = theme(), agent = this.agentTab || 'Claude', groups = this.groups();
     const counts = a => Object.values(groups[a] || {}).reduce((n, items) => n + items.length, 0);
     const folders = Object.entries(groups[agent] || {}).map(([folder, items]) => ({folder, items: items.sort((a, b) => b.time - a.time)}))
@@ -202,6 +233,12 @@ export default class History extends View {
         .child(v_virtual_list('history-list-' + agent, visible.length,
           visible.map(row => row.kind === 'folder' ? 34 : 42), i => visible[i].key,
           range => visible.slice(range.start, range.end).map(row => this.historyRow(row, t))).size_full()
+          .on_item_secondary_click((key, _event, cx) => {
+            const row = visible.find(item => item.key === key);
+            if (!row || row.kind !== 'conversation') return;
+            this.selected = key; cx.notify();
+            openOverlay({ mod: 'agent-history', kind: 'popup', width: 160, props: { forkMenu: true, record: row.record } });
+          })
           .on_item_click((key, cx) => {
             const row = visible.find(item => item.key === key);
             if (!row) return;
