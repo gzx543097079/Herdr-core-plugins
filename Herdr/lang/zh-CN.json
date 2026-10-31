@@ -1,0 +1,522 @@
+{
+  "code": "zh-CN",
+  "name": "简体中文",
+  "layout_name": "Herdr 中文",
+  "ui": {
+    "heading": "语言",
+    "title": "界面语言",
+    "about": "由 herdr-lang 插件注入翻译。切换后界面会自动刷新。"
+  },
+  "mods": {
+    "titles": {
+      "Agents": "代理",
+      "Spaces": "空间",
+      "Tabs": "标签页",
+      "Pane header": "窗格标题栏",
+      "Picker": "搜索",
+      "Add a machine": "添加机器"
+    },
+    "words": {
+      "Spaces": "空间",
+      "Agents": "代理",
+      "Files": "文件",
+      "Changes": "改动",
+      "Settings": "设置",
+      "Add machine": "添加机器",
+      "Add a machine": "添加机器",
+      "This computer": "本机",
+      "This folder": "此文件夹",
+      "No folder": "无文件夹",
+      "Terminal": "终端",
+      "Start an agent": "启动代理",
+      "New space": "新建空间",
+      "New space there": "在此新建空间",
+      "New tab": "新建标签页",
+      "New worktree": "新建工作树",
+      "New worktree…": "新建工作树…",
+      "Open worktree": "打开工作树",
+      "Open worktree\\u2026": "打开工作树…",
+      "Remove worktree": "移除工作树",
+      "Keybinds": "快捷键",
+      "Rename": "重命名",
+      "Close": "关闭",
+      "Close pane": "关闭窗格",
+      "Split right": "向右拆分",
+      "Split down": "向下拆分",
+      "Zoom": "放大",
+      "Use Herdr right-click menu": "使用 Herdr 右键菜单",
+      "Send right-clicks to pane": "右键交给窗格内程序",
+      "Theme: graphite": "主题：graphite",
+      "Theme: ink": "主题：ink",
+      "Theme: moss": "主题：moss",
+      "Theme: atom one dark": "主题：atom one dark",
+      "Needs you": "需要你",
+      "needs you": "需要你",
+      "Done": "已完成",
+      "Working": "工作中",
+      "Idle": "空闲",
+      "Pinned": "已置顶",
+      "Pin to the top": "置顶",
+      "Unpin": "取消置顶",
+      "Sort agents": "代理排序",
+      "Priority": "按优先级",
+      "Grouped by space": "按空间分组",
+      "Waiting in its terminal": "在终端中等待",
+      "Could not load agents": "无法加载代理",
+      "No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not.": "还没有代理状态。代理上报状态后会显示在这里，旧版本或在 tmux 里运行的代理可能不会显示。",
+      "Checking installed agents…": "正在检查已安装的代理…",
+      "not installed": "未安装",
+      "Go to…": "前往…",
+      "Go to a tab, space or agent…": "前往标签页、空间或代理…",
+      "new tab": "新建标签页",
+      "new space": "新建空间",
+      "Loading…": "加载中…",
+      "Loading file…": "正在加载文件…",
+      "Loading files…": "正在加载文件…",
+      "Loading changes…": "正在加载改动…",
+      "No files": "没有文件",
+      "Cannot list this folder": "无法列出此文件夹",
+      "This file is no longer available": "此文件已不存在",
+      "Cannot preview this file (binary, too large, or unreadable)": "无法预览此文件（二进制、过大或无法读取）",
+      "File list limited to 500 entries per folder and 5,000 total": "文件列表限制为每个文件夹 500 项、总计 5000 项",
+      "Not a git repository": "不是 git 仓库",
+      "No uncommitted changes": "没有未提交的改动",
+      "No text diff available": "没有可用的文本差异",
+      "Select a file to view its changes": "选择一个文件查看改动",
+      "Showing the first 1,000 changed files": "仅显示前 1000 个改动文件",
+      "Cannot preview this diff (too large or unreadable)": "无法预览此差异（过大或无法读取）",
+      "Binary file changed": "二进制文件已改动",
+      "Binary file · no text diff": "二进制文件 · 无文本差异",
+      "Binary file · no text preview": "二进制文件 · 无文本预览",
+      "Commit": "提交",
+      "Commit message": "提交说明",
+      "Committing…": "正在提交…",
+      "main checkout": "主检出",
+      "branch name": "分支名",
+      "filter worktrees": "筛选工作树",
+      "No matching worktrees.": "没有匹配的工作树。",
+      "Type a branch name.": "请输入分支名。",
+      "This is the repository's main checkout, not a worktree.": "这是仓库的主检出，不是工作树。",
+      "It has uncommitted changes: they will be lost.": "它有未提交的改动，这些改动将会丢失。",
+      "It changed since this opened. Enter again removes it anyway.": "打开后它已有变化。再按一次回车仍会移除。",
+      "\\u2191\\u2193 choose \\u00b7 \\u21b5 open \\u00b7 esc close": "↑↓ 选择 · ↵ 打开 · esc 关闭",
+      "esc close": "esc 关闭",
+      "working…": "处理中…",
+      "↵ remove · esc cancel": "↵ 移除 · esc 取消",
+      "↵ create · esc cancel": "↵ 创建 · esc 取消",
+      "git rev-parse failed.": "git rev-parse 执行失败。",
+      "git status failed.": "git status 执行失败。",
+      "git worktree add failed.": "git worktree add 执行失败。",
+      "git worktree remove failed.": "git worktree remove 执行失败。",
+      "Add": "添加",
+      "Added": "已添加",
+      "Connecting": "连接中",
+      "From your ssh config": "来自你的 ssh 配置",
+      "Your ssh config lists no hosts": "你的 ssh 配置里没有主机",
+      "Reading ~/.ssh/config…": "正在读取 ~/.ssh/config…",
+      "Or type how ssh reaches it": "或输入 ssh 连接方式",
+      "A VPS, a Mac mini, a box at home: Herdr reaches it over ssh, and agents there keep running while your laptop sleeps.": "VPS、Mac mini、家里的主机都行：Herdr 通过 ssh 连接，笔记本休眠时那边的代理也会继续运行。",
+      "It's open on the Mac's screen.": "已在那台 Mac 的屏幕上打开。",
+      "Could not find the remote home folder.": "找不到远程主目录。",
+      "it didn't answer": "没有响应",
+      "it didn't work": "没有成功",
+      "macOS asks on the Mac's own screen before an agent reads Desktop, Documents or Downloads, and waits until someone answers. Give herdr-core Full Disk Access there and it never asks again: in the list, press + and pick this file:": "代理读取桌面、文稿或下载文件夹前，macOS 会在那台 Mac 的屏幕上弹窗询问，并一直等到有人回应。在那里给 herdr-core 授予“完全磁盘访问权限”就不会再问了：在列表里点 +，然后选择这个文件："
+    },
+    "fragments": [
+      [
+        "`Sort agents: ${",
+        "`代理排序：${"
+      ],
+      [
+        "`Send back to ${",
+        "`送回 ${"
+      ],
+      [
+        "`Remove worktree ${",
+        "`移除工作树 ${"
+      ],
+      [
+        "`Open worktree${",
+        "`打开工作树${"
+      ],
+      [
+        "`New worktree${",
+        "`新建工作树${"
+      ],
+      [
+        "`Open the setting on ${mac.name}`",
+        "`在 ${mac.name} 上打开该设置`"
+      ],
+      [
+        "`Couldn't check submodule ${m.name}.`",
+        "`无法检查子模块 ${m.name}。`"
+      ],
+      [
+        "`Commit failed: ${e}`",
+        "`提交失败：${e}`"
+      ],
+      [
+        "`Cannot preview this diff (too large or unreadable): ${e}`",
+        "`无法预览此差异（过大或无法读取）：${e}`"
+      ],
+      [
+        "`Adding ${props().target}: answer it here`",
+        "`正在添加 ${props().target}：请在这里回答`"
+      ],
+      [
+        "`new space on ${r.machine}`",
+        "`在 ${r.machine} 上新建空间`"
+      ],
+      [
+        "`from ${parent.name || parent.address}`",
+        "`来自 ${parent.name || parent.address}`"
+      ],
+      [
+        "`also ${",
+        "`别名 ${"
+      ],
+      [
+        " is not in a git repository.`",
+        " 不是 git 仓库。`"
+      ],
+      [
+        "`${mac.name} is a Mac: allow its folders once`",
+        "`${mac.name} 是一台 Mac：需要允许一次访问它的文件夹`"
+      ],
+      [
+        "`earlier: ${r.count} quiet space${r.count > 1 ? \"s\" : \"\"} ${",
+        "`更早：${r.count} 个不活跃空间 ${"
+      ],
+      [
+        "`${list.length} agents`",
+        "`${list.length} 个代理`"
+      ],
+      [
+        "`· ${needs} needs you`",
+        "`· ${needs} 个需要你`"
+      ],
+      [
+        " Shift P  commands`",
+        " Shift P  命令`"
+      ],
+      [
+        "\"Couldn't open a terminal for it. Run `hc machine add \"",
+        "\"无法为它打开终端。请在终端里运行 `hc machine add \""
+      ],
+      [
+        "\"` in one.\"",
+        "\"`。\""
+      ],
+      [
+        "{ working: \"working\", blocked: \"needs you\", done: \"finished\", idle: \"idle\" }",
+        "{ working: \"工作中\", blocked: \"需要你\", done: \"已完成\", idle: \"空闲\" }"
+      ]
+    ],
+    "regexes": [
+      [
+        "`Closes the space and deletes \\$\\{(.*?)\\}\\. The branch stays\\.`",
+        "`关闭空间并删除 ${\\1}，分支会保留。`"
+      ],
+      [
+        "`A new space on a checkout in \\$\\{(.*?)\\}/\\$\\{r\\.name\\}/\\. A branch that exists is checked out; a new one starts from here\\.`",
+        "`在 ${\\1}/${r.name}/ 的检出上新建空间。已有分支会直接检出，新分支从当前位置创建。`"
+      ],
+      [
+        "`Submodule \\$\\{(.*?)\\} has commits that aren't pushed anywhere: they will be lost\\.`",
+        "`子模块 ${\\1} 有尚未推送的提交，这些提交将会丢失。`"
+      ]
+    ],
+    "keep_english": [
+      "Esc",
+      "Herdr"
+    ]
+  },
+  "frame": {
+    "titles": {
+      "Send feedback": "发送反馈",
+      "Command palette": "命令面板",
+      "Settings": "设置",
+      "Welcome": "欢迎",
+      "What's new": "更新内容"
+    },
+    "words": {
+      "Look": "外观",
+      "Machines": "机器",
+      "Alerts": "提醒",
+      "Updates": "更新",
+      "Privacy": "隐私",
+      "Settings": "设置",
+      "Send feedback": "发送反馈",
+      "Terminals": "终端",
+      "System": "跟随系统",
+      "Light": "浅色",
+      "Dark": "深色",
+      "Layout": "布局",
+      "Theme": "主题",
+      "Appearance": "明暗模式",
+      "Light or dark, or as your system is now.": "浅色、深色，或跟随系统。",
+      "For the layout you're in: each layout keeps its own light and dark theme.": "仅对当前布局生效：每个布局都有自己的浅色和深色主题。",
+      "This layout sets its own; yours shows in the others.": "此布局使用自带设置；你的设置在其他布局中生效。",
+      "Size and fonts": "大小和字体",
+      "Zoom": "缩放",
+      "Everything: terminals, panels, text.": "整体缩放：终端、面板、文字。",
+      "Reset": "重置",
+      "Terminal font": "终端字体",
+      "Interface font": "界面字体",
+      "Type to search fonts": "输入以搜索字体",
+      "Couldn't read machines.": "无法读取机器列表。",
+      "It didn't work.": "操作失败。",
+      "Updating…": "正在更新…",
+      "Renaming…": "正在重命名…",
+      "Removing…": "正在移除…",
+      "Update": "更新",
+      "Rename": "重命名",
+      "Remove": "移除",
+      "hc version unknown": "hc 版本未知",
+      "Copying this computer's herdr-core. Its terminals keep running.": "正在复制本机的 herdr-core，那边的终端会继续运行。",
+      "Cancel": "取消",
+      "Remove machine": "移除机器",
+      "New name (addresses using the old name stop working)": "新名称（使用旧名称的地址将失效）",
+      "Save": "保存",
+      "Your computers, reached over ssh. Their terminals keep running when you disconnect.": "通过 ssh 连接的电脑。断开连接后，那边的终端会继续运行。",
+      "This computer": "本机",
+      "Reading machines…": "正在读取机器…",
+      "No other machines yet.": "还没有其他机器。",
+      "Add a machine": "添加机器",
+      "Herdr's sound": "Herdr 默认音效",
+      "Sounds": "声音",
+      "Play sounds": "播放声音",
+      "When an agent needs you, and when one finishes while you're not looking. A note shows in the corner either way.": "代理需要你时，或在你没注意时完成任务时播放。无论是否播放，角落里都会显示通知。",
+      "An agent needs you": "代理需要你",
+      "Play": "试听",
+      "An agent finished": "代理已完成",
+      "Want your own sounds? Ask your agent to set sounds.done and sounds.blocked in settings.json to an MP3.": "想用自己的声音？让你的代理把 settings.json 里的 sounds.done 和 sounds.blocked 设为 MP3 文件。",
+      "Check now": "立即检查",
+      "Up to date": "已是最新",
+      "Checking\\u2026": "检查中…",
+      "\\u2713 Up to date": "✓ 已是最新",
+      "A build from source: it updates with git, not here.": "这是源码构建版本：请通过 git 更新，而不是在这里。",
+      "Restart to update": "重启以更新",
+      "Updating\\u2026 your terminals keep running.": "正在更新… 你的终端会继续运行。",
+      "Try again": "重试",
+      "Update herdr-core": "更新 herdr-core",
+      "Not checked: a build from source looks for no updates.": "未检查：源码构建版本不检查更新。",
+      "What's new": "更新内容",
+      "Herdr looks for both every hour and tells you in the corner. herdr-core runs your terminals, so they keep running through its updates.": "Herdr 每小时检查一次两者的更新，并在角落里提示你。herdr-core 负责运行你的终端，更新它时终端也会继续运行。",
+      "Usage data": "使用数据",
+      "Share anonymous usage data": "共享匿名使用数据",
+      "Once a day: which agents and features you use, how many spaces and tabs, your system and Herdr's version. Never what's in your terminals, never names of files, folders or projects.": "每天一次：你用了哪些代理和功能、有多少空间和标签页、你的系统和 Herdr 版本。绝不包含终端里的内容，也绝不包含文件、文件夹或项目的名称。",
+      "What we send": "我们发送的内容",
+      "This build never sends: it's built from source. You can still see what a release would send.": "此版本从源码构建，从不发送数据。你仍然可以查看正式版会发送什么。",
+      "Exactly what leaves your computer, word for word.": "逐字显示离开你电脑的全部内容。",
+      "Hide": "隐藏",
+      "Show": "查看",
+      "Nothing is collected or sent while it's off.": "关闭时不会收集或发送任何数据。",
+      "Sent as is, soon.": "即将原样发送。",
+      "Today so far": "今天到目前为止",
+      "A draft: it changes until the day ends (UTC), then goes out once.": "草稿：当天（UTC）结束前会持续变化，之后发送一次。",
+      "New tab": "新建标签页",
+      "Go to space or tab…": "前往空间或标签页…",
+      "Rename tab": "重命名标签页",
+      "Close tab": "关闭标签页",
+      "Next tab": "下一个标签页",
+      "Previous tab": "上一个标签页",
+      "Split right": "向右拆分",
+      "Split down": "向下拆分",
+      "Close pane": "关闭窗格",
+      "Zoom pane": "放大窗格",
+      "New space": "新建空间",
+      "Rename space": "重命名空间",
+      "Close space": "关闭空间",
+      "Next space": "下一个空间",
+      "Previous space": "上一个空间",
+      "Next layout": "下一个布局",
+      "Reset layout": "重置布局",
+      "Duplicate layout": "复制布局",
+      "Duplicate mod": "复制 mod",
+      "New terminal": "新建终端",
+      "Copy": "复制",
+      "Paste": "粘贴",
+      "Next agent": "下一个代理",
+      "Previous agent": "上一个代理",
+      "Minimize window": "最小化窗口",
+      "Maximize window": "最大化窗口",
+      "Close window": "关闭窗口",
+      "Keys": "快捷键",
+      "Welcome": "欢迎页",
+      "Reset to the default screen": "重置为默认界面",
+      "Zoom in": "放大",
+      "Zoom out": "缩小",
+      "Reset zoom": "重置缩放",
+      "Quit Herdr": "退出 Herdr",
+      "Type a command…": "输入命令…",
+      "Mod to copy; creates <name>-copy": "要复制的 mod，会生成 <name>-copy",
+      "Files": "文件",
+      "The folder you're in as a tree. Open a file to read it, highlighted.": "以目录树显示当前文件夹，打开文件可带高亮阅读。",
+      "Changes": "改动",
+      "What your agents changed: every file with its diff, and a commit box.": "代理改了什么：每个文件的差异，以及提交框。",
+      "Copied": "已复制",
+      "Coming from herdr?": "从终端版 herdr 过来？",
+      "This is a new app on a new core. Your herdr workspaces stay where they are; nothing moves over.": "这是基于新内核的新应用。你原来的 herdr 工作区保持原样，不会迁移过来。",
+      "Same idea as before: spaces, tabs and terminals.": "思路和以前一样：空间、标签页和终端。",
+      "Want your keybinds and settings carried over? Give your agent this line:": "想把快捷键和设置迁移过来？把这句话交给你的代理：",
+      "Herdr runs your terminals in the background": "Herdr 在后台运行你的终端",
+      "The terminals and agents you open here don't live in this window. They run in herdr-core, a small background program on your computer. Close Herdr, update it, or let it crash, and your agents keep working. Open it again and everything is where you left it, as long as the computer is on.": "你在这里打开的终端和代理并不依附于这个窗口，而是运行在 herdr-core 里，一个在你电脑后台运行的小程序。关闭、更新 Herdr，甚至它崩溃了，代理都会继续工作。只要电脑开着，再次打开时一切都还在原处。",
+      "Agents tell you when they need you": "代理需要你时会告诉你",
+      "A ring while one works, \\u201cNeeds you\\u201d when it asks something, a sound when it finishes.": "工作时显示转圈，提问时显示“需要你”，完成时播放提示音。",
+      "Agents can start helpers": "代理可以启动助手",
+      "They show up under the agent that started them. Click one to watch it.": "它们会显示在启动它们的代理下面，点击即可查看。",
+      "Your other machines, in the same window": "你的其他机器，也在同一个窗口里",
+      "A server or a Mac mini runs its own herdr-core, so its agents keep going even while this laptop sleeps.": "服务器或 Mac mini 运行自己的 herdr-core，即使这台笔记本休眠，那边的代理也会继续运行。",
+      "Size": "大小",
+      "Add your other machines": "添加你的其他机器",
+      "Pick a host from your ssh config. Herdr connects, installs herdr-core there if it's missing, and lists that machine in the sidebar with its own spaces.": "从你的 ssh 配置中选一台主机。Herdr 会连接过去，必要时在那边安装 herdr-core，并在侧边栏列出这台机器和它的空间。",
+      "Not now? Add machine is at the bottom of the sidebar too.": "现在不想加？侧边栏底部也有“添加机器”。",
+      "Choose your panels": "选择你的面板",
+      "Herdr comes with a couple of panels. Turn one on and it appears beside your terminals. Drag this window aside to see it. Later, the buttons in the tab bar open and close them.": "Herdr 自带几个面板。打开一个，它就会出现在终端旁边。把这个窗口拖到一边就能看到。之后可以用标签栏上的按钮打开或关闭它们。",
+      "Ask your agent for a board of your agents, your pull requests, a cost meter, or the sidebar on the right. Not sure what's possible? Ask it that too.": "可以让你的代理做一个代理看板、PR 列表、费用统计，或者把侧边栏移到右边。不确定能做什么？也可以直接问它。",
+      "One key opens everything": "一个快捷键打开一切",
+      "It opens the command palette, with every action by name and its key. It works the same in every layout.": "它会打开命令面板，列出每个操作的名称和快捷键，在所有布局中都一样。",
+      "Make it yours": "打造你自己的界面",
+      "Every part of this window is a layout or a mod: plain files your agent can change or add to. Give it this line to start:": "这个窗口的每个部分都是布局或 mod，也就是你的代理可以修改或添加的普通文件。把这句话交给它开始吧：",
+      "Then ask for anything: \\u201cmove the sidebar to the right\\u201d, \\u201ca panel with my pull requests\\u201d.": "然后想要什么就说：“把侧边栏移到右边”“加一个显示我 PR 的面板”。",
+      "Your terminals, outside this window too": "你的终端，在这个窗口之外也能用",
+      "More examples in Settings": "更多示例在设置里",
+      "Settings \\u203a Look has more layouts to try or start from, Herdr 98 among them. Your agent can copy any of them and change anything.": "设置 › 外观 里有更多布局可以试用或作为起点，其中包括 Herdr 98。你的代理可以复制其中任何一个并随意修改。",
+      "Something off or missing? Settings \\u203a Send feedback. We read every one.": "有问题或缺什么？设置 › 发送反馈。每一条我们都会看。",
+      "Welcome to Herdr": "欢迎使用 Herdr",
+      "Drag to move": "拖动以移动",
+      "Back": "上一步",
+      "Not now": "以后再说",
+      "Next": "下一步",
+      "Done": "完成",
+      "Open a space": "打开一个空间",
+      "What happened? What did you expect?": "发生了什么？你期望的是什么？",
+      "Email (optional)": "邮箱（可选）",
+      "Up to 3 screenshots.": "最多 3 张截图。",
+      "Add screenshot": "添加截图",
+      "This build was made from source and doesn't send feedback. Use a release build.": "此版本从源码构建，不能发送反馈，请使用正式版。",
+      "Drafted by an agent: read it before sending": "由代理起草：发送前请先阅读",
+      "Sent. Thanks for helping us improve Herdr.": "已发送，感谢你帮助我们改进 Herdr。",
+      "Your message (up to 4000 characters). Paste or drop screenshots, up to 3.": "你的留言（最多 4000 字）。可粘贴或拖入截图，最多 3 张。",
+      "Email: only if you want a reply": "邮箱：仅在你希望收到回复时填写",
+      "What we send: exactly this JSON, plus the screenshots above. No logs or install ID.": "我们发送的内容：就是这段 JSON 加上上面的截图，不含日志或安装 ID。",
+      "Sending…": "正在发送…",
+      "Send": "发送",
+      "What's new in Herdr": "Herdr 更新内容",
+      "Something off or missing? Settings › Send feedback.": "有问题或缺什么？设置 › 发送反馈。",
+      "Got it": "知道了"
+    },
+    "fragments": [
+      [
+        "`Default (${def})`",
+        "`默认（${def}）`"
+      ],
+      [
+        "`Updated ${machine}${payload?.version ? ` to hc ${payload.version}` : \"\"}; its terminals kept running.`",
+        "`已更新 ${machine}${payload?.version ? ` 到 hc ${payload.version}` : \"\"}，那边的终端一直在运行。`"
+      ],
+      [
+        "`Renamed ${machine} to ${name.trim()}.`",
+        "`已将 ${machine} 重命名为 ${name.trim()}。`"
+      ],
+      [
+        "`Removed ${machine}; its terminals keep running there.`",
+        "`已移除 ${machine}，那边的终端会继续运行。`"
+      ],
+      [
+        "`Remove ${m.name}? Its terminals keep running there.`",
+        "`移除 ${m.name}？那边的终端会继续运行。`"
+      ],
+      [
+        "`Connected · ${",
+        "`已连接 · ${"
+      ],
+      [
+        "` Checked at ${at(u.checked)}.`",
+        "` 检查于 ${at(u.checked)}。`"
+      ],
+      [
+        "`${u.app.ready} is ready. Restart to switch now; it also switches when you quit.`",
+        "`${u.app.ready} 已就绪。重启即可切换，退出时也会自动切换。`"
+      ],
+      [
+        "`Up to date.${checked}`",
+        "`已是最新。${checked}`"
+      ],
+      [
+        "`Managed by ${c.managed}: update it there.`",
+        "`由 ${c.managed} 管理：请在那里更新。`"
+      ],
+      [
+        "`The update failed: ${c.error}`",
+        "`更新失败：${c.error}`"
+      ],
+      [
+        "`${c.ready} is ready. Your terminals keep running through it.`",
+        "`${c.ready} 已就绪。更新期间你的终端会继续运行。`"
+      ],
+      [
+        "`Off for now: ${s.off_because} is set where Herdr started.`",
+        "`当前已关闭：启动 Herdr 的环境里设置了 ${s.off_because}。`"
+      ],
+      [
+        "`Waiting to send: ${r.day}`",
+        "`等待发送：${r.day}`"
+      ],
+      [
+        "`Last sent: ${s.last_sent.report.day}`",
+        "`上次发送：${s.last_sent.report.day}`"
+      ],
+      [
+        "`Sent ${at(s.last_sent.at)}.`",
+        "`发送于 ${at(s.last_sent.at)}。`"
+      ],
+      [
+        "`Focus pane ${d}`",
+        "`聚焦窗格 ${({left:\"左\",right:\"右\",up:\"上\",down:\"下\"})[d]}`"
+      ],
+      [
+        "`Swap pane ${d}`",
+        "`交换窗格 ${({left:\"左\",right:\"右\",up:\"上\",down:\"下\"})[d]}`"
+      ],
+      [
+        "`Theme: ${n.replace(/-/g, \" \")}`",
+        "`主题：${n.replace(/-/g, \" \")}`"
+      ],
+      [
+        "title: `Layout: ${t}`",
+        "title: `布局：${t}`"
+      ],
+      [
+        "`Nothing matches \"${this.query}\". Places are in the picker.`",
+        "`没有匹配“${this.query}”的命令。要找空间或标签页，请用搜索。`"
+      ]
+    ],
+    "palette_groups": {
+      "Recent": "最近",
+      "Tab": "标签页",
+      "Pane": "窗格",
+      "Space": "空间",
+      "Layout": "布局",
+      "Terminal": "终端",
+      "Agent": "代理",
+      "Window": "窗口",
+      "App": "应用"
+    },
+    "palette_keep": [
+      "Agent",
+      "App",
+      "Herdr",
+      "Herdr 98",
+      "Layout",
+      "Pane",
+      "Recent",
+      "Space",
+      "Tab",
+      "Terminal",
+      "Terminals",
+      "Window"
+    ]
+  }
+}
