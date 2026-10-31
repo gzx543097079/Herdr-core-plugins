@@ -19,7 +19,7 @@ shutil.copy2(src/'history.py', store/'history.py')
 mod = app/'mods/agent-history'
 mod.mkdir(parents=True, exist_ok=True)
 shutil.copy2(src/'mod.json', mod/'mod.json')
-shutil.copy2(src/'sidebar-right.svg', mod/'sidebar-right.svg')
+for icon in src.glob('*.svg'): shutil.copy2(icon, mod/icon.name)
 codex_app = Path('/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex')
 codex = shutil.which('codex') or (str(codex_app) if codex_app.exists() else 'codex')
 claude = shutil.which('claude') or str(home/'.local/bin/claude')

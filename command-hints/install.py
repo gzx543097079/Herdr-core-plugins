@@ -23,7 +23,7 @@ def install():
     status=find(layout,'status'); work=find(layout,'work')
     if not status or not work:raise RuntimeError('当前布局没有底部状态栏')
     mod=APP/'mods/command-hints';mod.mkdir(exist_ok=True)
-    shutil.copy2(SRC/'mod.json',mod/'mod.json');shutil.copy2(SRC/'skills.py',mod/'skills.py')
+    shutil.copy2(SRC/'mod.json',mod/'mod.json');[shutil.copy2(f,mod/f.name) for f in SRC.glob('*.svg')];shutil.copy2(SRC/'skills.py',mod/'skills.py')
     (mod/'main.js').write_text((SRC/'main.js').read_text().replace('SKILLS_SCRIPT',str(mod/'skills.py')))
     target=APP/'mods/command-hints-status';shutil.copytree(APP/'mods'/status['content']['mod'],target,dirs_exist_ok=True)
     source=(target/'main.js').read_text();anchor='      .child(div().flex_1())'

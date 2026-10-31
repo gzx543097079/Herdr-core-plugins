@@ -30,7 +30,7 @@ def install():
     text=text.replace('this.syncPanel(space, panel, body, enabled);','this.syncPanel(space, panel, body, [...enabled, ...gitEnabled]);')
     (target/'main.js').write_text(text)
     mod=APP/'mods/git-workbench';mod.mkdir(exist_ok=True)
-    for name in ['backend.py','mod.json','git.svg']:shutil.copy2(SRC/name,mod/name)
+    for name in ['backend.py','mod.json',*(f.name for f in SRC.glob('*.svg'))]:shutil.copy2(SRC/name,mod/name)
     (mod/'main.js').write_text((SRC/'main.js').read_text().replace('GIT_BACKEND',str(mod/'backend.py')))
     for folder in [mod,target]:subprocess.run([str(BIN),'check',str(folder)],check=True)
     tabs['content']['mod']=target.name
