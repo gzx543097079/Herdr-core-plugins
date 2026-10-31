@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+
+# 独立运行时交给管理器组合布局；管理器调用时执行下方实际安装逻辑。
+if __name__ == '__main__':
+    import os
+    import sys
+    from pathlib import Path
+    if os.environ.get('HERDR_PLUGIN_COMPOSE') != '1':
+        if len(sys.argv) != 1:
+            raise SystemExit('用法：install.py')
+        manager = Path(__file__).resolve().parent.parent / 'plugin-manager/server.py'
+        os.execv(sys.executable, [sys.executable, str(manager), '--action', 'commands', 'install'])
+
 import json
 import shutil
 import subprocess

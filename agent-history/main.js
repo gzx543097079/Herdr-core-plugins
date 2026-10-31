@@ -82,12 +82,12 @@ export default class History extends View {
   }
   fork(r, target, cx) {
     if (target === r.agent) {
-      this.open(r, target === 'Codex' ? [CODEX_BIN, 'fork', r.id] : [CLAUDE_BIN, '--resume', r.id, '--fork-session']);
+      this.open(r);
       return;
     }
     cx.spawn(async cx => {
       try {
-        const result = await exec('/usr/bin/python3', ['-I', 'HISTORY_SCRIPT', 'handoff', r.path, r.agent]);
+        const result = await exec('/usr/bin/python3', ['-I', 'HISTORY_SCRIPT', 'handoff', r.path, r.agent, r.title || '未命名对话']);
         if (result.code !== 0) throw new Error(result.stderr || '读取对话失败');
         const { prompt } = JSON.parse(result.stdout);
         this.open(r, [target === 'Codex' ? CODEX_BIN : CLAUDE_BIN, prompt]);
@@ -106,7 +106,7 @@ export default class History extends View {
       .on_click((_e, cx) => this.fork(r, target, cx))
       .child(image('icons/' + target.toLowerCase() + '.svg').size(16).flex_none())
       .child(div().flex_1().font_medium().child(target))
-      .when(target === r.agent, e => e.child(div().text_size(11).text_color(t.dim).child('原 CLI'))));
+      .when(target === r.agent, e => e.child(div().text_size(11).text_color(t.dim).child('恢复原对话'))));
     if (this.error) menu.child(div().px(10).py(6).text_size(11).text_color(t.ansi1).child(this.error));
     return menu;
   }

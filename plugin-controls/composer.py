@@ -272,10 +272,23 @@ def build(app, base, state):
         generated.append((name, source, text))
         return name
 
+    # 从官方组件生成独立副本，保持语言切换和插件组合可重复构建。
+    for node_id, module in (('spaces', 'spaces'),):
+        node = one(tree, node_id)
+        if mod(node) != module + suffix:
+            raise UnsupportedLayout(node_id + ' 不是支持的官方模块。')
+        source = read_module(app, module + suffix)
+        text = (source / 'main.js').read_text(encoding='utf-8')
+        if module == 'spaces':
+            text = replace_once(text, '.child(h_flex().h(31).pl(16).pr(10)', '.child(h_flex().h(36).pl(16).pr(10)')
+            text = replace_once(text, '.px(8)\n      .h(rowHeight({ tree }))', '.px(10)\n      .h(rowHeight({ tree }))')
+            text = replace_once(text, '.when(on, (el) => el.bg(t.selected))', '.when(on, (el) => el.bg(t.raised).border(1).border_color(t.border))')
+        node['content']['mod'] = generated_mod(module + suffix, text)
+
     tabs = one(tree, 'tabs')
     if mod(tabs) != 'tabs' + suffix:
         raise UnsupportedLayout('标签栏不是支持的官方模块。')
-    if state['history'] or state['git'] or state['motion']:
+    if mod(tabs) == 'tabs' + suffix:
         source = read_module(app, 'tabs' + suffix)
         text = (source / 'main.js').read_text(encoding='utf-8')
         if state['history']:
@@ -295,6 +308,8 @@ def build(app, base, state):
                 text = motion_module().patch_tabs(text, 140)
             except (ValueError, RuntimeError, AssertionError) as error:
                 raise UnsupportedLayout('标签栏动效源码不受支持：' + str(error)) from error
+        text = replace_once(text, '.h(29).px(10).gap(7).rounded(7)', '.h(32).px(12).gap(8).rounded(8)')
+        text = replace_once(text, '.gap(3).items_center().bg(t.chrome).border_b(1)', '.gap(5).items_center().bg(t.chrome).border_b(1)')
         tabs['content']['mod'] = generated_mod('tabs' + suffix, text)
     if state['motion']:
         motion = motion_module()

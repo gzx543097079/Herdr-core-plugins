@@ -225,7 +225,7 @@ if __name__=='__main__':
         print('操作已开始');sys.exit(0)
     if args.action:
         import time
-        time.sleep(0.5)  # The launching Herdr exec must return before issuing IPC.
+        time.sleep(0.1)  # 等待启动请求返回后再访问 Herdr。
         store=Path.home()/'.local/share/herdr-plugins';store.mkdir(parents=True,exist_ok=True)
         import fcntl
         with (store/'operation.lock').open('w') as lock:

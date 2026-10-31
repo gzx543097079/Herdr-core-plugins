@@ -40,12 +40,6 @@ def patch_tabs(s, duration):
     # Stable per-button identity: native GPUI interpolates opacity after selection.
     s = replace(s, '.text_size(12).bg(on ?', f'.opacity(on ? 1 : 0.78).transition("opacity", {duration}).text_size(12).bg(on ?')
     s = replace(s, '.border(1).border_color(c.active ?', f'.opacity(c.active ? 1 : 0.82).transition("opacity", {duration}).border(1).border_color(c.active ?')
-    effect = '''.when(c.status === "working", el => el.child(div().absolute().bottom(0).left(4).right(4).h(4).rounded(2).overflow_hidden().bg(t.working + "55")
-          .child(div().absolute().left(0).top(0).w(24).h(4).rounded(2).bg(t.working).loop("left", {from: -16, to: 70, period: 1500, easing: "linear"}))))'''
-    if not duration:
-        effect = '''.when(c.status === "working", el => el.child(div().absolute().bottom(0).left(4).right(4).h(3).rounded(2).bg(t.working)))'''
-    s = replace(s, 'return h_flex().id(`tab-${c.id}`).h(29)', 'return h_flex().id(`tab-${c.id}`).relative().h(29)')
-    s = replace(s, '        .when(Boolean(program?.icon),', '        ' + effect + '\n        .when(Boolean(program?.icon),')
     return s
 
 def patch_files(s, duration):

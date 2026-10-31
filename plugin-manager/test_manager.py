@@ -6,6 +6,30 @@ from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('manager',Path(__file__).with_name('server.py'))
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
+class OfficialLayoutTests(unittest.TestCase):
+    def test_clone_features_are_read_from_tree(self):
+        tree = {'terminal_menu': 'menu-i18n', 'children': [
+            {'id': 'history-sidebar', 'content': {'mod': 'agent-history'}},
+            {'content': {'mod': 'desktop-motion-files'}}, {'content': {'mod': 'desktop-motion-changes'}},
+            {'content': {'mod': 'spaces-i18n'}}, {'content': {'mod': 'pane-i18n'}},
+            {'id': 'command-hints', 'content': {'mod': 'command-hints'}},
+            {'content': {'mod': 'command-hints-status'}},
+            {'id': 'git-workbench', 'content': {'mod': 'git-workbench'}},
+            {'content': {'mod': 'git-workbench-tabs'}},
+        ]}
+        self.assertTrue(all(m.layout_features(tree).values()))
+        tree['children'].pop()
+        self.assertFalse(m.layout_features(tree)['git'])
+
+    def test_clone_cannot_change_shared_layouts(self):
+        with patch.object(m, 'status', return_value={'running': True, 'managed': False, 'plugins': {'git': True}}), \
+             patch.object(m, 'switch') as switch, patch.object(m, 'run') as run:
+            with self.assertRaisesRegex(RuntimeError, '独立布局副本'):
+                m.apply('history', 'uninstall')
+            switch.assert_not_called()
+            run.assert_not_called()
+
+
 class CompositionTests(unittest.TestCase):
     def exercise(self,plugin,action,enabled):
         wanted=dict(enabled);wanted[plugin]=action=='install'
@@ -57,5 +81,32 @@ class CommandCompositionTests(unittest.TestCase):
             m.apply('history','uninstall')
             switch.assert_called_once_with('base');base.assert_called_once_with('history','uninstall')
             self.assertIn('git-workbench/install.py',str(run.call_args))
+
+
+class DirectInstallerTests(unittest.TestCase):
+    def test_direct_installers_delegate_to_manager(self):
+        import os
+        import runpy
+        import sys
+        root = Path(__file__).resolve().parent.parent
+        for folder, plugin in [('agent-history', 'history'), ('desktop-motion', 'motion'),
+                               ('command-hints', 'commands'), ('git-workbench', 'git')]:
+            with self.subTest(plugin=plugin), patch.dict(os.environ, {}, clear=True), \
+                 patch.object(sys, 'argv', [str(root / folder / 'install.py')]), \
+                 patch.object(os, 'execv', side_effect=SystemExit(0)) as execute:
+                with self.assertRaises(SystemExit):
+                    runpy.run_path(str(root / folder / 'install.py'), run_name='__main__')
+                self.assertEqual(execute.call_args.args[1][-3:], ['--action', plugin, 'install'])
+
+    def test_motion_reduced_option_reaches_manager(self):
+        import os
+        import runpy
+        import sys
+        script = Path(__file__).resolve().parent.parent / 'desktop-motion/install.py'
+        with patch.dict(os.environ, {}, clear=True), patch.object(sys, 'argv', [str(script), '--reduce-motion']), \
+             patch.object(os, 'execv', side_effect=SystemExit(0)):
+            with self.assertRaises(SystemExit):
+                runpy.run_path(str(script), run_name='__main__')
+            self.assertEqual(os.environ['HERDR_MOTION_REDUCED'], '1')
 
 if __name__=='__main__':unittest.main()
