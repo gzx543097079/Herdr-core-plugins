@@ -70,10 +70,14 @@ export default class History extends View {
   open(r) {
     const overlay = props()?.overlay;
     const argv = r.agent === "Codex" ? [CODEX_BIN, "resume", r.id] : [CLAUDE_BIN, "--resume", r.id];
-    const args = { folder: r.cwd, name: r.title.slice(0, 35), argv };
-    const space = spaces().find(s => s.active);
-    if (space) run("tab.new", { ...args, space: space.id });
-    else run("space.new", args);
+    const title = (r.title || '未命名对话').slice(0, 35);
+    const folder = path => (path || '').replace(/\/+$/, '') || '/';
+    const candidates = spaces().filter(s => !s.machine && s.folder && folder(s.folder) === folder(r.cwd));
+    const space = candidates.find(s => s.active) || candidates[0];
+    if (space) {
+      run("space.select", { id: space.id });
+      run("tab.new", { folder: r.cwd, name: title, argv, space: space.id });
+    } else run("space.new", { folder: r.cwd, tab: title, argv });
     if (overlay) closeOverlay(overlay);
   }
   deleteRows(rows, cx) {
