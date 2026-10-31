@@ -273,7 +273,7 @@ def build(app, base, state):
         return name
 
     # 从官方组件生成独立副本，保持语言切换和插件组合可重复构建。
-    for node_id, module in (('spaces', 'spaces'),):
+    for node_id, module in (('spaces', 'spaces'), ('agents', 'agents'), ('brand', 'workspace-chrome')):
         node = one(tree, node_id)
         if mod(node) != module + suffix:
             raise UnsupportedLayout(node_id + ' 不是支持的官方模块。')
@@ -282,7 +282,16 @@ def build(app, base, state):
         if module == 'spaces':
             text = replace_once(text, '.child(h_flex().h(31).pl(16).pr(10)', '.child(h_flex().h(36).pl(16).pr(10)')
             text = replace_once(text, '.px(8)\n      .h(rowHeight({ tree }))', '.px(10)\n      .h(rowHeight({ tree }))')
-            text = replace_once(text, '.when(on, (el) => el.bg(t.selected))', '.when(on, (el) => el.bg(t.raised).border(1).border_color(t.border))')
+            text = replace_once(text, '.size(18).flex_none().rounded(5).bg(fill)', '.size(22).flex_none().rounded(6).bg(fill)')
+            text = replace_once(text, '.when(on, (el) => el.bg(t.selected))', '.when(on, (el) => el.bg(t.accent).text_color(t.accent_foreground))')
+            text = replace_once(text, '.truncate().text_color(t.foreground).child(w.name)', '.truncate().font_medium().text_color(on ? t.accent_foreground : t.foreground).child(w.name)')
+            text = replace_once(text, 'this.gitTail(g, tree, w.name, t)', 'this.gitTail(g, tree, w.name, on ? {...t, dim: t.accent_foreground, ansi2: t.accent_foreground, ansi1: t.accent_foreground} : t)')
+        elif module == 'agents':
+            text = replace_once(text, '.px(8)\n        .h(30)\n        .flex_none()\n        .rounded(8)', '.px(10)\n        .h(34)\n        .flex_none()\n        .rounded(8)')
+            text = replace_once(text, '.h(41)\n            .pt(14)\n            .pb(5)', '.h(40)\n            .pt(10)\n            .pb(5)')
+            text = replace_once(text, '.when(a.focused, (el) => el.bg(t.selected))', '.when(a.focused, (el) => el.bg(t.raised).border(1).border_color(t.border))')
+        else:
+            text = replace_once(text, '.gap(8).items_center().child(image("frame/welcome/herdr.png").size(20).rounded(5))', '.gap(9).items_center().child(image("frame/welcome/herdr.png").size(21).rounded(6))')
         node['content']['mod'] = generated_mod(module + suffix, text)
 
     tabs = one(tree, 'tabs')
@@ -308,21 +317,28 @@ def build(app, base, state):
                 text = motion_module().patch_tabs(text, 140)
             except (ValueError, RuntimeError, AssertionError) as error:
                 raise UnsupportedLayout('标签栏动效源码不受支持：' + str(error)) from error
-        text = replace_once(text, '.h(29).px(10).gap(7).rounded(7)', '.h(32).px(12).gap(8).rounded(8)')
+        text = replace_once(text, '.h(29).px(10).gap(7).rounded(7)', '.h(34).px(14).gap(8).rounded(9)')
+        text = replace_once(text, '.bg(c.active ? t.raised : t.chrome)', '.bg(c.active ? t.background : t.chrome)')
         text = replace_once(text, '.gap(3).items_center().bg(t.chrome).border_b(1)', '.gap(5).items_center().bg(t.chrome).border_b(1)')
         tabs['content']['mod'] = generated_mod('tabs' + suffix, text)
-    if state['motion']:
-        motion = motion_module()
-        for name in ('files', 'changes'):
-            node = one(tree, name)
-            if mod(node) != name + suffix:
-                raise UnsupportedLayout(name + ' 不是支持的官方模块。')
-            source = read_module(app, name + suffix)
+    motion = motion_module() if state['motion'] else None
+    for name in ('files', 'changes'):
+        if name == 'changes' and not motion:
+            continue
+        node = one(tree, name)
+        if mod(node) != name + suffix:
+            raise UnsupportedLayout(name + ' 不是支持的官方模块。')
+        source = read_module(app, name + suffix)
+        text = (source / 'main.js').read_text(encoding='utf-8')
+        if motion:
             try:
-                text = getattr(motion, 'patch_' + name)((source / 'main.js').read_text(encoding='utf-8'), 140)
+                text = getattr(motion, 'patch_' + name)(text, 140)
             except (ValueError, RuntimeError, AssertionError) as error:
                 raise UnsupportedLayout(name + ' 动效源码不受支持：' + str(error)) from error
-            node['content']['mod'] = generated_mod(name + suffix, text)
+        if name == 'files':
+            text = replace_once(text, '.pl(8 + depth * 18)', '.pl(8 + depth * 22)')
+            text = replace_once(text, '.size(14).flex_none().text_color(t.muted))\n        .child(div().flex_1().min_w(0).truncate().child(entry.name))', '.size(15).flex_none().text_color(entry.dir ? (open ? t.accent : t.foreground) : t.muted))\n        .child(div().flex_1().min_w(0).truncate().when(entry.dir, el => el.font_medium()).child(entry.name))')
+        node['content']['mod'] = generated_mod(name + suffix, text)
     body = one(tree, 'panel-body')
     work = one(tree, 'work')
     panel = one(tree, 'panel')
