@@ -1,6 +1,6 @@
 import { View, div, image, svg } from 'gpui-kit';
 import { h_flex, v_flex, v_virtual_list, Scrollbar } from 'gpui-base';
-import { theme, run, exec, spaces, panes, focused, settings } from 'herdr';
+import { theme, run, exec, spaces, panes, focused, agents, settings } from 'herdr';
 
 const COMMANDS = {
   Claude: [
@@ -22,6 +22,13 @@ const COMMANDS = {
 };
 export default class CommandHints extends View {
   init() { this.agent='Claude'; this.skillsOpen=false; this.cache=new Map(); this.pending=new Set(); this.copied=''; }
+  // 识别当前聚焦终端里运行的 CLI：Claude Code / Codex，其他程序返回 null。
+  detect() {
+    const f=focused(), pane=f?.pane ? panes().find(p=>p.pane===f.pane) : null;
+    const app=pane?.app || agents().find(a=>a.focused)?.app || '', key=pane?.program?.key || '';
+    const id=(app+' '+key).toLowerCase();
+    return /claude/.test(id) ? 'Claude' : /codex/.test(id) ? 'Codex' : null;
+  }
   project() { const f=focused(); return f?.cwd || panes().find(p=>p.pane===f?.pane)?.cwd || spaces().find(s=>s.active)?.folder || ''; }
   key() { return this.agent+'\n'+this.project(); }
   loadSkills(cx, force=false) {
@@ -54,7 +61,8 @@ export default class CommandHints extends View {
     return h_flex().id('commands-'+agent).gap(5).px(9).h_full().items_center().rounded(5).cursor_pointer().text_size(12)
       .when(on,e=>e.bg(t.background).shadow_xs()).text_color(on?t.foreground:t.muted).when(!on,e=>e.hover(s=>s.text_color(t.foreground)))
       .on_click((_e,cx)=>{this.agent=agent;this.copied='';if(this.skillsOpen)this.loadSkills(cx);cx.notify();})
-      .child(image('icons/'+agent.toLowerCase()+'.svg').size(13)).child(agent);
+      .child(image('icons/'+agent.toLowerCase()+'.svg').size(13)).child(agent)
+      .when(this.detected===agent,e=>e.tooltip('当前终端正在运行 '+agent).child(div().size(5).rounded(3).bg(t.ansi2)));
   }
   command(command,description,t,mono) {
     const done=this.copied===command;
@@ -68,7 +76,13 @@ export default class CommandHints extends View {
     if(this.copied)return h_flex().gap(5).items_center().text_size(11.5).text_color(t.ansi2).child(svg('mods/command-hints/check.svg').size(12).text_color(t.ansi2)).child('已复制，粘贴到终端使用');
     return div().text_size(11.5).text_color(t.dim).child('点击命令复制，不会自动执行');
   }
-  render() {
+  render(cx) {
+    // 聚焦终端的 CLI 变化时自动切换；手动点选在下次 CLI 变化前保持有效。
+    const detected=this.detect();
+    if(detected!==this.detected){
+      this.detected=detected;
+      if(detected&&detected!==this.agent){this.agent=detected;this.copied='';if(this.skillsOpen)cx.timer.after(0,cx=>this.loadSkills(cx));}
+    }
     const t=theme(), key=this.key(), data=this.cache.get(key), skills=data?.rows || [], mono=settings().font_family ?? 'JetBrains Mono';
     const muted=(text)=>div().px(6).py(2).text_size(11.5).text_color(t.dim).child(text);
     return v_flex().size_full().min_h(0).px(10).pt(6).pb(6).gap(6).bg(t.chrome).border_t(1).border_color(t.border).text_size(12.8)
