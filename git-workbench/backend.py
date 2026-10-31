@@ -180,9 +180,9 @@ def pr_detail(params):
     return cached(['pr-v2',repo,number],60,params.get('force'),read)
 
 def branches(root):
-    fmt='%(refname)%00%(objectname)%00%(HEAD)%00%(upstream:short)%00%(upstream:track)%00%(committerdate:short)%00%(subject)'
+    fmt='%(refname)%00%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(HEAD)%00%(upstream:short)%00%(upstream:track)%00%(creatordate:short)%00%(subject)'
     rows=[]
-    for line in git(root,'for-each-ref','--sort=-committerdate','--format='+fmt,'refs/heads','refs/remotes','refs/tags').splitlines()[:500]:
+    for line in git(root,'for-each-ref','--sort=-creatordate','--format='+fmt,'refs/heads','refs/remotes','refs/tags').splitlines()[:500]:
         fields=line.split('\0',6)
         if len(fields)!=7:continue
         ref,sha,current,upstream,tracking,date,title=fields

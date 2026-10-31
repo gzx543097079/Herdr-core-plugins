@@ -106,7 +106,7 @@ export default class GitWorkbench extends View {
         const [graph,dirty,branches]=await Promise.all([this.call('graph',{...params,limit:this.limit,scope:this.scope,query:this.query}),this.call('changes',params),this.call('branches',params)]);
         if(token!==this.epoch)return;if(!shown()){this.context='';return;}
         this.info=graph.meta;this.branches=branches.items;this.graph=graph.rows;this.more=graph.more;this.dirty=dirty.files;this.dirtyLimited=dirty.limited;this.cache.set(key,this.graph);
-      }else if(tab==='branches'){
+      }else if(tab==='branches'||tab==='tags'){
         const data=await this.call('branches',params);if(token!==this.epoch||!shown())return;this.branches=data.items;this.info={...this.info,...data.meta};this.more=false;
       }else{
         const data=await this.call('prs',{repo:this.repository(),mode:this.prMode,branch:info.branch,page:this.prPage,force});
@@ -161,7 +161,8 @@ export default class GitWorkbench extends View {
     cx.spawn(async cx=>{try{const data=await this.call('compare',{cwd:this.info.root,base,sha});if(token===this.detailToken&&epoch===this.epoch){this.detail={...this.detail,...data};if(data.files[0])this.openFile(data.files[0],cx);cx.notify();}}catch(e){if(token===this.detailToken&&epoch===this.epoch){this.error=e?.message||String(e);cx.notify();}}});
   }
   selectTab(tab,cx){if(tab===this.tab)return;this.tab=tab;this.more=false;this.prPage=1;this.load(cx);cx.notify();}
-  openBranch(row,cx){this.detailToken++;this.detailTab='about';this.file='';this.diff=[];this.detail={kind:'branch',title:row.name,sha:row.sha,ref:row.ref,files:[],body:row.kind+' · '+(row.current?'当前工作分支':'')+'\n上游：'+(row.upstream||'未设置')+'\n'+(row.gone?'上游已删除':'领先 '+row.ahead+' / 落后 '+row.behind)+'\n最近提交：'+row.date+'\n'+row.title+'\n\n领先 / 落后基于本地远程跟踪引用，本操作不会 fetch。'};cx.notify();}
+  openBranch(row,cx){if(row.kind==='标签'){const tips=this.branches.filter(b=>b.kind!=='标签'&&b.sha===row.sha).map(b=>b.name);this.detailToken++;this.detailTab='about';this.file='';this.diff=[];this.detail={kind:'branch',tag:true,title:row.name,subtitle:'标签 · '+row.date+' · '+row.sha.slice(0,7),sha:row.sha,ref:row.ref,files:[],body:'指向提交 '+row.sha.slice(0,7)+'\n'+(tips.length?'同时是分支末端：'+tips.join('、'):'不在任何分支末端')+'\n创建于：'+row.date+'\n'+row.title};cx.notify();return;}
+    this.detailToken++;this.detailTab='about';this.file='';this.diff=[];this.detail={kind:'branch',title:row.name,sha:row.sha,ref:row.ref,files:[],body:row.kind+' · '+(row.current?'当前工作分支':'')+'\n上游：'+(row.upstream||'未设置')+'\n'+(row.gone?'上游已删除':'领先 '+row.ahead+' / 落后 '+row.behind)+'\n最近提交：'+row.date+'\n'+row.title+'\n\n领先 / 落后基于本地远程跟踪引用，本操作不会 fetch。'};cx.notify();}
   graphRows(){
     const info=this.info,key=[this.graph,this.dirty.length,info?.head,this.query,this.scope].map(x=>Array.isArray(x)?x.length+':'+(x[0]?.sha||''):x).join('|');
     if(this.laidKey!==key||this.laidSrc!==this.graph){
@@ -253,13 +254,13 @@ export default class GitWorkbench extends View {
     const dirty=this.dirty.length;
     return v_flex().flex_none().px(12).pt(10).pb(8).gap(8)
       .child(h_flex().gap(8).items_center()
-        .child(this.segment([['graph','提交'],['branches','分支 / 标签'],['prs','Pull Requests']],this.tab,(tab,cx)=>this.selectTab(tab,cx),t))
+        .child(this.segment([['graph','提交'],['branches','分支'],['tags','标签'],['prs','Pull Requests']],this.tab,(tab,cx)=>this.selectTab(tab,cx),t))
         .child(div().flex_1())
         .when(!!this.info&&this.tab!=='graph',e=>e.child(h_flex().id('dirty').px(8).h(26).gap(6).flex_none().items_center().rounded(6).cursor_pointer().text_size(12).when(this.detail?.kind==='dirty',e=>e.bg(t.selected)).text_color(dirty?t.foreground:t.dim).hover(s=>s.bg(t.hover))
           .on_click((_e,cx)=>{this.openDirty(cx);})
           .child(div().size(6).rounded(3).bg(dirty?t.blocked:t.border)).child(dirty?dirty+' 处未提交':'工作区干净'))))
       .when(this.tab==='graph'&&!!this.info,e=>e.child(h_flex().gap(6)
-        .child(this.menuBtn('branch-filter',this.scope==='all'?'所有分支':this.scope==='HEAD'?'当前分支':basename(this.scope),(_e,cx)=>{this.branchPicker=!this.branchPicker;cx.notify();},t,this.branchPicker))
+        .child(this.menuBtn('branch-filter',this.scope==='all'?'所有分支':this.scope==='HEAD'?'当前分支':this.scope.replace(/^refs\/(heads|remotes|tags)\//,''),(_e,cx)=>{this.branchPicker=!this.branchPicker;cx.notify();},t,this.branchPicker))
         .child(div().flex_1().min_w(0).child(this.input(this.search,'commit-search',t)))))
       .when(this.tab==='prs',e=>e.child(h_flex().gap(6).items_center()
         .child(h_flex().id('pr-modes').flex_1().min_w(0).overflow_x_scroll().gap(2).children([['branch','当前分支'],['all','全部'],['mine','我创建的'],['review','待我审查'],['open','打开'],['merged','已合并'],['closed','已关闭']].map(([mode,label])=>this.btn('mode-'+mode,label,(_e,cx)=>{this.prMode=mode;this.prPage=1;this.prs=[];this.load(cx);},t,this.prMode===mode))))
@@ -269,9 +270,19 @@ export default class GitWorkbench extends View {
         .child(div().flex_1().min_w(0).truncate().text_size(11.5).text_color(t.muted).child('选择另一条提交，点击「对比至此」'))
         .child(this.btn('clear-base','清除',(_e,cx)=>{this.base=null;cx.notify();},t))));
   }
-  branchMenu(t){return v_flex().id('refs').max_h(200).flex_none().mx(12).mb(8).p(4).gap(1).rounded(8).border_1().border_color(t.border).bg(t.popover).shadow_md().overflow_y_scroll().children(['all','HEAD',...(this.info?.refs||[])].map((ref,i)=>{const on=this.scope===ref;
-    return h_flex().id('ref-'+i).h(26).px(8).gap(6).flex_none().items_center().rounded(5).cursor_pointer().text_size(12).hover(s=>s.bg(t.hover)).on_click((_e,cx)=>{this.scope=ref;this.branchPicker=false;this.limit=100;this.load(cx);})
-      .child(div().w(14).flex_none().when(on,e=>e.child(svg(I.check).size(12).text_color(t.accent)))).child(div().flex_1().min_w(0).truncate().child(ref==='all'?'所有分支':ref==='HEAD'?'当前分支':ref.replace(/^refs\//,'')));}));}
+  branchMenu(t){
+    const refs=this.info?.refs||[],groups=[['',['all','HEAD']],['本地分支',refs.filter(r=>r.startsWith('refs/heads/'))],['远程分支',refs.filter(r=>r.startsWith('refs/remotes/')&&!r.endsWith('/HEAD'))],['标签',refs.filter(r=>r.startsWith('refs/tags/'))]];
+    const items=[];let i=0;
+    for(const [title,list] of groups){if(!list.length)continue;
+      if(title)items.push(div().h(22).px(8).pt(6).flex_none().text_size(10.5).font_medium().text_color(t.dim).child(title+' · '+list.length));
+      for(const ref of list){const on=this.scope===ref,n=i++;
+        items.push(h_flex().id('ref-'+n).h(26).px(8).gap(6).flex_none().items_center().rounded(5).cursor_pointer().text_size(12).hover(s=>s.bg(t.hover)).on_click((_e,cx)=>{this.scope=ref;this.branchPicker=false;this.limit=100;this.load(cx);})
+          .child(div().w(14).flex_none().when(on,e=>e.child(svg(I.check).size(12).text_color(t.accent))))
+          .when(!!title,e=>e.child(svg(title==='标签'?I.tag:I.branch).size(11).text_color(title==='标签'?t.ansi3:t.dim)))
+          .child(div().flex_1().min_w(0).truncate().child(ref==='all'?'所有分支':ref==='HEAD'?'当前分支':ref.replace(/^refs\/(heads|remotes|tags)\//,''))));}}
+    return v_flex().id('refs').max_h(240).flex_none().mx(12).mb(8).p(4).gap(1).rounded(8).border_1().border_color(t.border).bg(t.popover).shadow_md().overflow_y_scroll().children(items);
+  }
+  refTab(){return this.tab==='branches'||this.tab==='tags';}
   row(row,t){
     const item=(on,h)=>h_flex().h(h).rounded(6).cursor_pointer().when(on,e=>e.bg(t.selected)).hover(s=>s.bg(on?t.selected:t.hover));
     if(this.tab==='graph'){
@@ -286,8 +297,17 @@ export default class GitWorkbench extends View {
             .child(div().min_w(0).truncate().child(row.author)).child(div().flex_none().child('·')).child(div().flex_none().child(ago(row.time,row.date)))
             .child(div().flex_none().font_family('Menlo').text_size(10.5).child(row.sha.slice(0,7)))));
     }
+    if(this.tab==='tags'){
+      const tips=this.branches.filter(b=>b.kind!=='标签'&&b.sha===row.sha).map(b=>b.name);
+      return item(this.detail?.ref===row.ref,52).gap(10).px(8).items_center()
+        .child(svg(I.tag).size(14).text_color(t.ansi3))
+        .child(v_flex().flex_1().min_w(0).gap(2).child(h_flex().gap(6).items_center().child(div().min_w(0).truncate().font_medium().child(row.name))
+            .children(tips.slice(0,2).map(n=>h_flex().h(18).px(6).gap(3).flex_none().max_w(140).items_center().rounded(5).border_1().border_color(t.border).text_size(10.5).text_color(t.muted).tooltip('标签打在此分支的末端提交上').child(svg(I.branch).size(10).text_color(t.dim)).child(div().min_w(0).truncate().child(n)))))
+          .child(div().truncate().text_size(11).text_color(t.dim).child(row.date+' · '+row.title)))
+        .child(div().font_family('Menlo').text_size(10.5).text_color(t.dim).child(row.sha.slice(0,7)));
+    }
     if(this.tab==='branches')return item(this.detail?.ref===row.ref,52).gap(10).px(8).items_center()
-      .child(svg(row.kind==='标签'?I.tag:I.branch).size(14).text_color(row.current?t.ansi2:t.dim))
+      .child(svg(I.branch).size(14).text_color(row.current?t.ansi2:t.dim))
       .child(v_flex().flex_1().min_w(0).gap(2).child(h_flex().gap(6).items_center().child(div().min_w(0).truncate().font_medium().child(row.name))
           .when(row.current,e=>e.child(this.badge('当前',t,t.ansi2))).when(row.kind!=='本地分支',e=>e.child(this.badge(row.kind,t))))
         .child(div().truncate().text_size(11).text_color(row.gone?t.blocked:t.dim).child(row.upstream?(row.upstream+' · '+(row.gone?'上游已删除':'↑'+row.ahead+' ↓'+row.behind)):'未设置上游 · '+row.date)))
@@ -310,26 +330,26 @@ export default class GitWorkbench extends View {
       .when(!this.loading&&!this.info,e=>e.child(h_flex().mt(6).child(this.btn('empty-pick','选择仓库',(_e,cx)=>{this.repoPicker=true;cx.notify();},t,true,I.folder))));
   }
   list(t){
-    const rows=this.tab==='graph'?this.graphRows().rows:this.tab==='branches'?this.branches:this.prs,id='workbench-'+this.tab;
-    const heights=this.tab==='graph'?H:this.tab==='branches'?52:58;
+    const rows=this.tab==='graph'?this.graphRows().rows:this.tab==='branches'?this.branches.filter(r=>r.kind!=='标签'):this.tab==='tags'?this.branches.filter(r=>r.kind==='标签'):this.prs,id='workbench-'+this.tab;
+    const heights=this.tab==='graph'?H:this.refTab()?52:58;
     const count=rows.filter(r=>!r.dirty).length;
     return v_flex().flex_1().min_h(80).gap(0)
       .when(!!rows.length,e=>e.child(h_flex().h(22).px(16).items_center().text_size(11).text_color(t.dim)
-        .child(div().flex_1().child(this.tab==='graph'?'提交':this.tab==='branches'?'分支与跟踪状态（基于本地引用）':'Pull Requests')).child(count+(this.more?'+':'')+' 条')))
+        .child(div().flex_1().child(this.tab==='graph'?'提交':this.tab==='branches'?'分支与跟踪状态（基于本地引用）':this.tab==='tags'?'标签（按创建时间）':'Pull Requests')).child(count+(this.more?'+':'')+' 条')))
       .child(div().flex_1().min_h(0).relative().px(8)
-        .child(v_virtual_list(id,rows.length,heights,i=>this.tab==='graph'?rows[i].key:this.tab==='branches'?rows[i].ref:String(rows[i].number),range=>{this.nearEnd=range.end>=rows.length-8;return rows.slice(range.start,range.end).map(r=>this.row(r,t));}).size_full()
-          .on_item_click((key,cx)=>{if(this.tab==='graph'){if(key==='__dirty'){this.openDirty(cx);return;}const r=this.graph.find(r=>r.key===key);if(r)this.openCommit(r,cx);}else if(this.tab==='branches'){const r=this.branches.find(r=>r.ref===key);if(r)this.openBranch(r,cx);}else{const r=this.prs.find(r=>String(r.number)===key);if(r)this.openPR(r,cx);}}))
+        .child(v_virtual_list(id,rows.length,heights,i=>this.tab==='graph'?rows[i].key:this.refTab()?rows[i].ref:String(rows[i].number),range=>{this.nearEnd=range.end>=rows.length-8;return rows.slice(range.start,range.end).map(r=>this.row(r,t));}).size_full()
+          .on_item_click((key,cx)=>{if(this.tab==='graph'){if(key==='__dirty'){this.openDirty(cx);return;}const r=this.graph.find(r=>r.key===key);if(r)this.openCommit(r,cx);}else if(this.refTab()){const r=this.branches.find(r=>r.ref===key);if(r)this.openBranch(r,cx);}else{const r=this.prs.find(r=>String(r.number)===key);if(r)this.openPR(r,cx);}}))
         .child(Scrollbar.vertical(id).viewport_from_layout().absolute().inset_0())
-        .on_scroll_wheel((_e,cx)=>{if(this.tab==='branches'||this.scrollQueued)return;this.scrollQueued=true;cx.timer.after(80,cx=>{this.scrollQueued=false;if(shown()&&this.nearEnd)this.moreRows(cx);});})
+        .on_scroll_wheel((_e,cx)=>{if(this.refTab()||this.scrollQueued)return;this.scrollQueued=true;cx.timer.after(80,cx=>{this.scrollQueued=false;if(shown()&&this.nearEnd)this.moreRows(cx);});})
         .when(!rows.length,e=>e.child(this.emptyState(t))))
-      .when(this.more&&this.tab!=='branches'&&!!rows.length,e=>e.child(h_flex().py(6).justify_center().child(this.btn('load-more',this.loading?'读取中…':'加载更多',(_e,cx)=>this.moreRows(cx),t))));
+      .when(this.more&&!this.refTab()&&!!rows.length,e=>e.child(h_flex().py(6).justify_center().child(this.btn('load-more',this.loading?'读取中…':'加载更多',(_e,cx)=>this.moreRows(cx),t))));
   }
   detailView(t){
     const d=this.detail,pr=d.kind==='pr',branch=d.kind==='branch';
     let box=v_flex().min_h(0).gap(0).border_t(1).border_color(t.border);
     box=this.detailOnly?box.flex_1():box.h(Math.max(240,Math.min(400,this.height*0.5)));
     return box.child(v_flex().flex_none().px(12).pt(10).pb(8).gap(6)
-      .child(h_flex().gap(5).items_center().child(this.badge(pr?'PR #'+(d.number||'…'):branch?'分支':d.kind==='compare'?'对比':d.kind==='dirty'?'工作区':d.sha.slice(0,7),t,t.accent))
+      .child(h_flex().gap(5).items_center().child(this.badge(pr?'PR #'+(d.number||'…'):branch?(d.tag?'标签':'分支'):d.kind==='compare'?'对比':d.kind==='dirty'?'工作区':d.sha.slice(0,7),t,t.accent))
         .child(div().flex_1().min_w(0).truncate().font_semibold().text_size(13.5).child(d.title))
         .child(this.iconBtn('detail-zoom',this.detailOnly?I.min:I.max,this.detailOnly?'返回列表':'放大详情',(_e,cx)=>{this.detailOnly=!this.detailOnly;cx.notify();},t))
         .child(this.iconBtn('detail-close',I.x,'关闭详情',(_e,cx)=>{this.detailToken++;this.fileToken++;this.detail=null;this.detailOnly=false;this.diff=[];cx.notify();},t)))
