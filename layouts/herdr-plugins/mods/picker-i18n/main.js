@@ -171,7 +171,7 @@ export default class Picker extends View {
           .child(div().w(12).child("+"))
           .child(label);
       }
-      const who = r.mine.map((a) => a.program?.name ?? "agent").join(" · ");
+      const who = r.mine.map((a) => a.program?.name ?? "代理").join(" · ");
       const here = r.w.active && r.ctx.active;
       return h_flex()
         .id(`pk-${r.ctx.id}`)
@@ -188,7 +188,7 @@ export default class Picker extends View {
         .child(this.glyph(t, r.ctx.status))
         .child(div().flex_1().truncate().text_color(t.foreground).when(here, (d) => d.font_semibold()).child(r.ctx.name))
         .when(r.ctx.status === "blocked", (el) => el.child(div().text_size(11).text_color(t.blocked).child("需要你")))
-        .when(r.ctx.status === "done", (el) => el.child(div().text_size(11).text_color(t.done).child("finished")))
+        .when(r.ctx.status === "done", (el) => el.child(div().text_size(11).text_color(t.done).child("已完成")))
         .child(div().text_size(11).text_color(t.dim).child(who + (r.team ? `  +${r.team}` : "")));
     };
 
