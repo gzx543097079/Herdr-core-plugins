@@ -131,7 +131,7 @@
                       "id": "files",
                       "type": "block",
                       "content": {
-                        "mod": "plugin-controls-940e014334a858dd12f6"
+                        "mod": "herdr-files"
                       }
                     },
                     {

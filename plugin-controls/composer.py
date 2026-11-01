@@ -323,6 +323,9 @@ def build(app, base, state):
         tabs['content']['mod'] = generated_mod('tabs' + suffix, text)
     motion = motion_module() if state['motion'] else None
     for name in ('files', 'changes'):
+        if name == 'files' and (app / 'mods' / 'herdr-files' / 'main.js').is_file():
+            one(tree, name)['content']['mod'] = 'herdr-files'
+            continue
         if name == 'changes' and not motion:
             continue
         node = one(tree, name)

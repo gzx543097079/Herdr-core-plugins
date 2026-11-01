@@ -90,6 +90,15 @@ class ComposerTests(unittest.TestCase):
         self.assertEqual(tree['custom'], self.layout['custom'])
         self.assertTrue((self.app / 'mods' / 'agent-history').exists())
 
+    def test_custom_file_panel_survives_switches(self):
+        self.module('herdr-files', 'custom files')
+        for feature in composer.FEATURES:
+            composer.compose(self.app, 'herdr-plugins', {feature: True})
+            self.assertEqual(composer.mod(composer.one(self.read(), 'files')), 'herdr-files')
+        for feature in reversed(composer.FEATURES):
+            composer.compose(self.app, 'herdr-plugins', {feature: False})
+            self.assertEqual(composer.mod(composer.one(self.read(), 'files')), 'herdr-files')
+
     def test_preserves_unknown_changes_and_rejects_controlled_edit(self):
         composer.compose(self.app, 'herdr-plugins', {'history': True})
         tree = self.read()
