@@ -29,7 +29,7 @@
               "id": "spaces",
               "type": "block",
               "content": {
-                "mod": "plugin-controls-1ba7dbbd5d7c806dd728"
+                "mod": "plugin-controls-e269308fd9e43e1b87b7"
               },
               "size": {
                 "weight": 1
@@ -138,7 +138,7 @@
                       "id": "changes",
                       "type": "block",
                       "content": {
-                        "mod": "plugin-controls-16db0c27a971d0288ee1"
+                        "mod": "plugin-controls-83e309265c7be0ec3cde"
                       }
                     },
                     {
@@ -163,7 +163,7 @@
                 }
               ],
               "size": {
-                "px": 720
+                "px": 368
               },
               "min": 280,
               "max": 1100

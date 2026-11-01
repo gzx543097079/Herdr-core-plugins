@@ -254,7 +254,7 @@ export default class GitWorkbench extends View {
     const dirty=this.dirty.length;
     return v_flex().flex_none().px(12).pt(10).pb(8).gap(8)
       .child(h_flex().gap(8).items_center()
-        .child(this.segment([['graph','提交'],['branches','分支'],['tags','标签'],['prs','Pull Requests']],this.tab,(tab,cx)=>this.selectTab(tab,cx),t))
+        .child(this.segment([['graph','提交'],['branches','分支'],['tags','标签'],['prs','拉取请求']],this.tab,(tab,cx)=>this.selectTab(tab,cx),t))
         .child(div().flex_1())
         .when(!!this.info&&this.tab!=='graph',e=>e.child(h_flex().id('dirty').px(8).h(26).gap(6).flex_none().items_center().rounded(6).cursor_pointer().text_size(12).when(this.detail?.kind==='dirty',e=>e.bg(t.selected)).text_color(dirty?t.foreground:t.dim).hover(s=>s.bg(t.hover))
           .on_click((_e,cx)=>{this.openDirty(cx);})
@@ -335,7 +335,7 @@ export default class GitWorkbench extends View {
     const count=rows.filter(r=>!r.dirty).length;
     return v_flex().flex_1().min_h(80).gap(0)
       .when(!!rows.length,e=>e.child(h_flex().h(22).px(16).items_center().text_size(11).text_color(t.dim)
-        .child(div().flex_1().child(this.tab==='graph'?'提交':this.tab==='branches'?'分支与跟踪状态（基于本地引用）':this.tab==='tags'?'标签（按创建时间）':'Pull Requests')).child(count+(this.more?'+':'')+' 条')))
+        .child(div().flex_1().child(this.tab==='graph'?'提交':this.tab==='branches'?'分支与跟踪状态（基于本地引用）':this.tab==='tags'?'标签（按创建时间）':'拉取请求')).child(count+(this.more?'+':'')+' 条')))
       .child(div().flex_1().min_h(0).relative().px(8)
         .child(v_virtual_list(id,rows.length,heights,i=>this.tab==='graph'?rows[i].key:this.refTab()?rows[i].ref:String(rows[i].number),range=>{this.nearEnd=range.end>=rows.length-8;return rows.slice(range.start,range.end).map(r=>this.row(r,t));}).size_full()
           .on_item_click((key,cx)=>{if(this.tab==='graph'){if(key==='__dirty'){this.openDirty(cx);return;}const r=this.graph.find(r=>r.key===key);if(r)this.openCommit(r,cx);}else if(this.refTab()){const r=this.branches.find(r=>r.ref===key);if(r)this.openBranch(r,cx);}else{const r=this.prs.find(r=>String(r.number)===key);if(r)this.openPR(r,cx);}}))

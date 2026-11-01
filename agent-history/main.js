@@ -209,7 +209,6 @@ export default class History extends View {
     }
     const empty = !this.loading && !this.error && !visible.length;
     return div().id('history-surface').size_full().overflow_hidden()
-      .on_mouse_down_out((_event, cx) => this.dismiss(cx))
       .child(v_flex().id('history-content').relative().left(this.historyShown ? 0 : 18)
       .opacity(this.historyShown ? 1 : 0)
       .transition('left', {duration: this.closing ? 140 : 180, easing: 'ease-out'})

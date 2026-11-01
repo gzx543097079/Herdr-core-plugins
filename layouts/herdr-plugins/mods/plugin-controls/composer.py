@@ -318,8 +318,6 @@ def build(app, base, state):
             if any(n.get('id') == name for n in nodes(tree)):
                 raise UnsupportedLayout('插件节点已存在：' + name)
             body['children'].append({'id': name, 'type': 'block', 'content': content})
-    if state['git']:
-        panel['size'], panel['max'] = {'px': 720}, 1100
     if state['commands']:
         if any(n.get('id') == 'command-hints' for n in nodes(tree)):
             raise UnsupportedLayout('命令提示节点已存在。')
