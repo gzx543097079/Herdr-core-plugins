@@ -16,13 +16,13 @@ const PER_FOLDER = 500, TOTAL = 5000;
 async function directory(path, on) {
   if (!on && window()?.platform === "windows") {
     const r = await exec("powershell", ["-NoProfile", "-Command", "& { param($p) @(Get-ChildItem -LiteralPath $p -Force -ErrorAction Stop | Where-Object Name -ne '.git' | Select-Object -First 501 | ForEach-Object { @{ name=$_.Name; dir=($_.PSIsContainer -and -not ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)) } }) | ConvertTo-Json -Compress } '" + path.replaceAll("'", "''") + "'"]);
-    if (r.code !== 0) throw new Error(r.stderr || "无法列出此文件夹");
+    if (r.code !== 0) throw new Error(r.stderr || "无法列出当前文件夹");
     const result = JSON.parse(r.stdout || "[]");
     return Array.isArray(result) ? result : [result];
   }
   const script = 'n=0; for p in "$1"/* "$1"/.[!.]* "$1"/..?*; do [ -e "$p" ] || [ -L "$p" ] || continue; name=${p##*/}; [ "$name" = .git ] && continue; if [ -d "$p" ] && [ ! -L "$p" ]; then kind=d; else kind=f; fi; printf "%s\\0%s\\0" "$kind" "$name"; n=$((n+1)); [ "$n" -gt 500 ] && break; done; test -d "$1"';
   const r = await exec("sh", ["-c", script, "files", path], { on });
-  if (r.code !== 0) throw new Error(r.stderr || "无法列出此文件夹");
+  if (r.code !== 0) throw new Error(r.stderr || "无法列出当前文件夹");
   const fields = r.stdout.split("\0"), out = [];
   for (let i = 0; i + 1 < fields.length; i += 2) out.push({ name: fields[i + 1], dir: fields[i] === "d" });
   return out;
@@ -37,14 +37,14 @@ export default class Files extends View {
       cx.spawn(async cx => {
         try {
           const text = await readTextFile(`${p.root}/${p.path}`, { on: p.on });
-          if (text === null) this.fileError = "此文件已不存在";
+          if (text === null) this.fileError = "此文件已不可用";
           else if (text.includes("\0")) this.fileError = "二进制文件 · 无文本预览";
           else {
             const t = theme(), ext = p.path.includes(".") ? p.path.split(".").pop() : "txt";
             this.code = EditorState.new({ language: LANG[ext] ?? ext, readonly: true, value: text.length > 400000 ? text.slice(0, 400000) + "\n… (file truncated)" : text,
               font_family: settings().font_family, font_size: 12, syntax: { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 } });
           }
-        } catch { this.fileError = "无法预览此文件（二进制、过大或无法读取）"; }
+        } catch { this.fileError = "无法预览此文件（二进制文件、体积过大或无法读取）"; }
         finally { cx.notify(); }
       });
       return;
@@ -152,14 +152,14 @@ export default class Files extends View {
       try {
         const text = await readTextFile(`${root}/${path}`, { on });
         if (this.file !== path || !this.current(context)) return;
-        if (text === null) { this.fileError = "此文件已不存在"; return; }
+        if (text === null) { this.fileError = "此文件已不可用"; return; }
         if (text.includes("\0")) { this.fileError = "二进制文件 · 无文本预览"; return; }
         const t = theme(), ext = path.includes(".") ? path.split(".").pop() : "txt";
         this.code = EditorState.new({ language: LANG[ext] ?? ext, readonly: true,
           value: text.length > 400000 ? text.slice(0, 400000) + "\n… (file truncated)" : text,
           font_family: settings().font_family, font_size: 12,
           syntax: { keyword: t.ansi5, string: t.ansi2, comment: t.dim, function: t.ansi4, type: t.ansi3, number: t.ansi1, constant: t.ansi6 } });
-      } catch { if (this.file === path && this.current(context)) this.fileError = "无法预览此文件（二进制、过大或无法读取）"; }
+      } catch { if (this.file === path && this.current(context)) this.fileError = "无法预览此文件（二进制文件、体积过大或无法读取）"; }
       finally { cx.notify(); }
     });
   }
@@ -267,8 +267,8 @@ export default class Files extends View {
           .on_item_secondary_click((path, event, cx) => { const row = visible.find(r => r.path === path); if (row) this.contextMenu(row, event, cx); })
           .on_item_click((path, cx) => { const row = visible.find(r => r.path === path); if (!row) return; this.selected = path; this.handle.focus(); if (row.entry.dir) this.toggle(path, cx); else cx.notify(); }))
         .child(Scrollbar.vertical("motion-files-rows").viewport_from_layout().absolute().inset_0())
-        .when(Boolean(this.error) || !this.entries.get("")?.length, el => el.child(div().p(8).text_size(12).text_color(t.dim).child(this.error || (this.loading ? "正在加载文件…" : this.root ? "没有文件" : "无文件夹"))))
-        .when(this.limited, el => el.child(div().p(8).text_size(11).text_color(t.dim).child("文件列表限制为每个文件夹 500 项、总计 5000 项")))))
+        .when(Boolean(this.error) || !this.entries.get("")?.length, el => el.child(div().p(8).text_size(12).text_color(t.dim).child(this.error || (this.loading ? "正在加载文件…" : this.root ? "无文件" : "无文件夹"))))
+        .when(this.limited, el => el.child(div().p(8).text_size(11).text_color(t.dim).child("文件列表每个文件夹最多显示 500 项，总计最多 5,000 项")))))
       .when(Boolean(this.file), el => el.child(this.code ? Editor.new(this.code).flex_1().min_h(0) : div().p(12).text_color(t.dim).child(this.fileError || "正在加载文件…")));
   }
 }

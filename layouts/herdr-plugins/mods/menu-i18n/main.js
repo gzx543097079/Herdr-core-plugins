@@ -33,14 +33,14 @@ function items(p, git) {
       // Once they go to the program, Shift+right-click still opens this menu.
       const toProgram = term?.labels?.["herdr.right-click"] === "program";
       return [
-        ["向右拆分", "pane.split", { direction: "right", pane: tg.pane }],
-        ["向下拆分", "pane.split", { direction: "down", pane: tg.pane }],
-        ["放大", "pane.zoom", { pane: tg.pane }],
+        ["向右分屏", "pane.split", { direction: "right", pane: tg.pane }],
+        ["向下分屏", "pane.split", { direction: "down", pane: tg.pane }],
+        ["最大化", "pane.zoom", { pane: tg.pane }],
         ...(term
           ? [
               toProgram
                 ? ["使用 Herdr 右键菜单", "terminal.right_click", { terminal: term.address, to: "menu" }]
-                : ["右键交给窗格内程序", "terminal.right_click", { terminal: term.address, to: "program" }],
+                : ["把右键菜单交给窗格内程序", "terminal.right_click", { terminal: term.address, to: "program" }],
             ]
           : []),
         ...(parent ? [[`送回 ${parent.name || parent.address}`, "terminal.park", { terminal: term.address }]] : []),

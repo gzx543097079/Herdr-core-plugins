@@ -112,7 +112,7 @@ export default class Worktree extends View {
     this.text = props()?.branch ?? "";
     this.list = undefined; // open: the checkouts, once read
     this.at = 0;
-    this.input = InputState.new({ value: this.text, placeholder: this.opening ? "筛选工作树" : "分支名" });
+    this.input = InputState.new({ value: this.text, placeholder: this.opening ? "筛选工作树" : "分支名称" });
     this.input.on("change", (_e, cx) => { this.text = this.input.value(); this.error = ""; this.at = 0; cx.notify(); });
     this.input.on("submit", (_e, cx) => this.go(cx));
     this.inputFocused = true;
@@ -181,7 +181,7 @@ export default class Worktree extends View {
 
   async create() {
     const branch = this.text.trim();
-    if (!branch) return "请输入分支名。";
+    if (!branch) return "请输入分支名称。";
     const path = `${ROOT(this.userHome)}/${this.repo.name}/${slug(branch)}`;
     const exists = (await git(this.repo.main, ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`], this.on)).ok;
     const add = exists ? ["worktree", "add", path, branch] : ["worktree", "add", "-b", branch, path, "HEAD"];
@@ -217,7 +217,7 @@ export default class Worktree extends View {
     const changed = (status.out && !this.dirty) || unpushed.some((name) => !this.unpushed.includes(name));
     this.dirty ||= status.out !== "";
     this.unpushed = [...new Set([...this.unpushed, ...unpushed])];
-    if (changed) return "打开后它已有变化。再按一次回车仍会移除。";
+    if (changed) return "打开后它又发生了变化。再次按回车仍会移除它。";
     // Terminals first: a shell sitting in the folder keeps it busy on Windows.
     run("space.close", { id: s.id, confirmed: true });
     const force = this.dirty || mods.length > 0;
@@ -279,7 +279,7 @@ export default class Worktree extends View {
       .text_size(13)
       .child(h_flex().child(div().flex_1().font_semibold().text_color(t.foreground).child(`打开工作树${r ? ` of ${r.name}` : ""}`)).child(div().text_size(11).text_color(t.dim).child(r ? count : "")))
       .when(r === undefined || (r && this.list === undefined), (el) => el.child(div().text_color(t.muted).child("\u2026")))
-      .when(r === null, (el) => el.child(div().text_color(t.muted).child(`${this.folder ? tilde(this.folder, this.userHome ?? "") : "此文件夹"} 不是 git 仓库。`)))
+      .when(r === null, (el) => el.child(div().text_color(t.muted).child(`${this.folder ? tilde(this.folder, this.userHome ?? "") : "当前文件夹"} 不在 git 仓库中。`)))
       .when(Boolean(r && this.list), (el) =>
         el
           .child(Input.new(this.input).h(32).px(10).items_center().rounded(6).border(1).border_color(this.inputFocused ? t.accent : t.input).bg(t.background).text_color(t.foreground))
@@ -299,7 +299,7 @@ export default class Worktree extends View {
               .child(Scrollbar.vertical("wt-list").absolute().inset_0()),
           ),
       )
-      .child(h_flex().justify_end().text_size(11).text_color(t.dim).child("↑↓ 选择 · ↵ 打开 · esc 关闭"));
+      .child(h_flex().justify_end().text_size(11).text_color(t.dim).child("↑↓ 选择 · ↵ 打开 · 按 esc 关闭"));
   }
 
   render(cx) {
@@ -313,10 +313,10 @@ export default class Worktree extends View {
       r === undefined
         ? "…"
         : r === null
-          ? `${this.folder ? tilde(this.folder, this.userHome) : "此文件夹"} 不是 git 仓库。`
+          ? `${this.folder ? tilde(this.folder, this.userHome) : "当前文件夹"} 不在 git 仓库中。`
           : remove
             ? !r.linked
-              ? "这是仓库的主检出，不是工作树。"
+              ? "这是仓库的主检出，并非工作树。"
               : `关闭空间并删除 ${tilde(r.top, this.userHome)}，分支会保留。`
             : `在 ${tilde(ROOT(this.userHome), this.userHome)}/${r.name}/ 的检出上新建空间。已有分支会直接检出，新分支从当前位置创建。`;
     const blocked = !r || (remove && !r.linked);
@@ -331,7 +331,7 @@ export default class Worktree extends View {
       .text_size(13)
       .child(div().font_semibold().text_color(t.foreground).child(title))
       .child(div().text_color(t.muted).child(detail))
-      .when(remove && this.dirty, (el) => el.child(div().text_color(t.blocked).child("它有未提交的改动，这些改动将会丢失。")))
+      .when(remove && this.dirty, (el) => el.child(div().text_color(t.blocked).child("它有未提交的改动，这些改动会丢失。")))
       .when(remove && this.unpushed.length > 0, (el) => el.child(div().text_color(t.blocked).child(`子模块 ${this.unpushed.join(", ")} 有尚未推送的提交，这些提交将会丢失。`)))
       .when(!remove && !blocked, (el) =>
         el.child(
@@ -353,7 +353,7 @@ export default class Worktree extends View {
           .justify_end()
           .text_size(11)
           .text_color(t.dim)
-          .child(this.busy ? "处理中…" : blocked ? "esc 关闭" : remove ? "↵ 移除 · esc 取消" : "↵ 创建 · esc 取消"),
+          .child(this.busy ? "处理中…" : blocked ? "按 esc 关闭" : remove ? "↵ 移除 · esc 取消" : "↵ 创建 · esc 取消"),
       );
   }
 }

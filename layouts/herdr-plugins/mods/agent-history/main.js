@@ -18,7 +18,7 @@ export default class History extends View {
       const cached = JSON.parse(localStorage.getItem('agent-history.rows.v1') || '[]');
       if (Array.isArray(cached) && cached.length) { this.rows = cached; this.loading = false; }
     } catch (_) {}
-    this.input = InputState.new({ placeholder: "搜索对话或项目路径…" });
+    this.input = InputState.new({ placeholder: "查找对话或项目路径…" });
     this.input.on("change", (_e, cx) => { this.filter = this.input.value().toLowerCase(); this.expanded = {}; cx.notify(); });
     this.input.on("focus", (_e, cx) => { this.typing = true; cx.notify(); });
     this.input.on("blur", (_e, cx) => { this.typing = false; cx.notify(); });
@@ -189,7 +189,7 @@ export default class History extends View {
     const armed = this.armed === row.key;
     if (armed) return div().h(24).px(8).flex_none().flex().items_center().rounded(6).bg(t.ansi1 + '1f').text_size(11.5).font_medium().text_color(t.ansi1)
       .child(row.kind === 'folder' ? `删除 ${row.items.length} 条` : '确认删除');
-    return div().size(24).flex_none().flex().items_center().justify_center().rounded(6).opacity(0.45).hover(s => s.bg(t.hover).opacity(1)).tooltip(row.kind === 'folder' ? '删除此文件夹下的全部对话' : '删除这条对话')
+    return div().size(24).flex_none().flex().items_center().justify_center().rounded(6).opacity(0.45).hover(s => s.bg(t.hover).opacity(1)).tooltip(row.kind === 'folder' ? '删除当前文件夹下的全部对话' : '删除这条对话')
       .child(svg('mods/agent-history/trash.svg').size(13).text_color(t.dim));
   }
   historyRow(row, t) {

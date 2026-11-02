@@ -257,7 +257,7 @@ export default class Spaces extends View {
       const empty = h_flex().id(`machine-new-${m ?? "local"}`).h(28).flex_none().px(8).gap(7).items_center().rounded(7)
         .text_size(12).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.foreground))
         .on_click(() => run("space.new", m ? { machine: m } : {}))
-        .child(svg("mods/workspace-chrome/plus.svg").size(12)).when(!collapsed, el => el.child("在此新建空间"));
+        .child(svg("mods/workspace-chrome/plus.svg").size(12)).when(!collapsed, el => el.child("在此处新建空间"));
       return [head, ...(folded ? [] : mine.length ? mine.map(draw) : [loading(m) ? loadingRow(m) : empty])];
     });
   }

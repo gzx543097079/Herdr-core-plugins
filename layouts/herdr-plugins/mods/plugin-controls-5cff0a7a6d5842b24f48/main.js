@@ -12,7 +12,7 @@ export default class WorkspaceStatus extends View {
     return h_flex().size_full().px(14).gap(16).items_center().bg(t.chrome).border_t(1).border_color(t.border).text_size(11.8).text_color(t.muted)
       .child(label(space?.machine ? "server" : "monitor", space?.machine ?? "本机"))
       .when(Boolean(space?.branch), el => el.child(label("branch", space.branch)))
-      .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} 个代理`)
+      .child(h_flex().gap(6).items_center().child(div().size(6).rounded(3).bg(t.dim)).child(`${list.length} 个智能体`)
         .when(needs > 0, el => el.child(div().text_color(t.blocked).child(`· ${needs} 个需要你`))))
       .child(div().flex_1())
       .child(div().id("command-hints-toggle").px(8).h(24).flex().items_center().rounded(5).cursor_pointer().hover(s=>s.bg(t.hover)).on_click(()=>run("layout.toggle",{id:"command-hints"})).child("命令提示"))
