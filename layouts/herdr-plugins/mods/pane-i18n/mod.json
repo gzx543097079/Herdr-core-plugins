@@ -1,6 +1,6 @@
 {
   "place": "none",
-  "title": "窗格标题栏",
+  "title": "窗格标题",
   "cloned_from": {
     "name": "pane",
     "version": "0.1.10"

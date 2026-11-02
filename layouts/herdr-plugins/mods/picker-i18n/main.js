@@ -37,7 +37,7 @@ function spaceColor(t, p) {
 export default class Picker extends View {
   init(_props, cx) {
     this.filter = "";
-    this.input = InputState.new({ placeholder: "前往标签页、空间或代理…" });
+    this.input = InputState.new({ placeholder: "跳转到标签页、空间或智能体…" });
     this.input.on("change", (_e, cx) => { this.filter = this.input.value(); this.at = 0; cx.notify(); });
     this.input.on("submit", () => this.go(this.rows().filter(r => r.kind === "ctx" || r.kind === "new" || r.kind === "space")[this.at]));
     this.input.focus();
@@ -149,11 +149,11 @@ export default class Picker extends View {
             this.showEarlier = !this.showEarlier;
             cx.notify();
           })
-          .child(`更早：${r.count} 个不活跃空间 ${this.showEarlier ? "▴" : "▾"}`);
+          .child(`更早：${r.count} 个沉寂空间 ${this.showEarlier ? "▴" : "▾"}`);
       }
       const on = r === sel;
       if (r.kind === "new" || r.kind === "space") {
-        const label = r.kind === "new" ? "新建标签页" : r.machine ? `在 ${r.machine} 上新建空间` : "新建空间";
+        const label = r.kind === "new" ? "新建标签页" : r.machine ? `在 ${r.machine} 上新建的空间` : "新建空间";
         return h_flex()
           .id(r.kind === "new" ? "pk-new" : `pk-space-${r.machine ?? "here"}`)
           .mx(4)
@@ -171,7 +171,7 @@ export default class Picker extends View {
           .child(div().w(12).child("+"))
           .child(label);
       }
-      const who = r.mine.map((a) => a.program?.name ?? "代理").join(" · ");
+      const who = r.mine.map((a) => a.program?.name ?? "智能体").join(" · ");
       const here = r.w.active && r.ctx.active;
       return h_flex()
         .id(`pk-${r.ctx.id}`)
@@ -215,7 +215,7 @@ export default class Picker extends View {
         cx.stop_propagation();
         cx.notify();
       })
-      .child(h_flex().items_center().child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("前往…")).child(div().text_size(11).text_color(t.dim).child("Esc")))
+      .child(h_flex().items_center().child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("跳转到…")).child(div().text_size(11).text_color(t.dim).child("Esc")))
       .child(
         h_flex().h(36).flex_none().px(10).gap(8).items_center().rounded(9).border_1().border_color(t.accent).bg(t.background)
           .child(svg("mods/workspace-chrome/search.svg").size(15).text_color(t.dim))

@@ -31,7 +31,7 @@ function diffRows(lines) {
 export default class Changes extends View {
   init(_props, cx) {
     this.files = []; this.rows = []; this.diffWidth = 0; this.message = ""; this.handle = cx.focus_handle();
-    this.input = InputState.new({ placeholder: "提交说明" });
+    this.input = InputState.new({ placeholder: "提交信息" });
     this.input.on("change", (_e, cx) => {
       const hadMessage = Boolean(this.message.trim());
       this.message = this.input.value();
@@ -113,7 +113,7 @@ export default class Changes extends View {
         if (!this.open && !this.closed && files.length) this.open = files[0].path;
         if (this.open) {
           try { await this.load(this.open, context); }
-          catch { if (key() === context) this.setLines(["无法预览此差异（过大或无法读取）"]); }
+          catch { if (key() === context) this.setLines(["无法预览此差异（体积过大或无法读取）"]); }
         }
       } catch (e) { if (key() === context) this.error = String(e); }
       finally { this.loading = false; if (this.refreshAgain) { this.refreshAgain = false; this.scheduleRefresh(cx); } cx.notify(); }
@@ -126,7 +126,7 @@ export default class Changes extends View {
     let lines;
     if (file.fresh || (!this.hasHead && file.status === "A")) {
       const text = await readTextFile(`${root}/${path}`, { on }).catch(() => null);
-      if (text === null) lines = ["无法预览此文件（二进制、过大或无法读取）"];
+      if (text === null) lines = ["无法预览此文件（二进制文件、体积过大或无法读取）"];
       else if (text.includes("\0")) lines = ["二进制文件 · 无文本差异"];
       else {
         file.add = countLines(text);
@@ -136,7 +136,7 @@ export default class Changes extends View {
       const r = await exec("git", [...READ, "diff", ...(this.hasHead ? ["HEAD"] : []), "--no-ext-diff", "--no-textconv", "--no-color", "--", path], { cwd: root, on });
       if (r.code !== 0) throw new Error(r.stderr);
       const all = r.stdout.replace(/\n$/, "").split("\n"), first = all.findIndex((l) => l.startsWith("@@"));
-      lines = first < 0 ? [file.binary ? "二进制文件已改动" : "没有可用的文本差异"] : all.slice(first);
+      lines = first < 0 ? [file.binary ? "二进制文件有改动" : "没有可显示的文本差异"] : all.slice(first);
     }
     if (key() === context && this.open === path) this.setLines(lines.slice(0, 1500).map(line => line.length > 4000 ? line.slice(0, 4000) + "… (line truncated)" : line));
   }
@@ -155,7 +155,7 @@ export default class Changes extends View {
     const context = this.context;
     if (this.open) cx.spawn(async (cx) => {
       try { await this.load(path, context); }
-      catch (e) { if (key() === context && this.open === path) this.note = `无法预览此差异（过大或无法读取）：${e}`; }
+      catch (e) { if (key() === context && this.open === path) this.note = `无法预览此差异（体积过大或无法读取）：${e}`; }
       cx.notify();
     });
     cx.notify();
@@ -209,13 +209,13 @@ export default class Changes extends View {
         .child(v_virtual_list("motion-changes-rows", this.files.length, 28, i => this.files[i].path,
           range => this.files.slice(range.start, range.end).map(f => this.changeRow(f, t))).size_full().on_item_click((path, cx) => this.pick(path, cx)))
         .child(Scrollbar.vertical("motion-changes-rows").viewport_from_layout().absolute().inset_0()).when(!this.files.length, (e) => e.child(div().p(8).text_color(t.dim).child(this.error || (this.loading ? "正在加载改动…" : this.root ? "没有未提交的改动" : "无文件夹")))))
-      .when(this.limited, el => el.child(div().px(12).py(4).text_size(11).text_color(t.dim).child("仅显示前 1000 个改动文件")))
+      .when(this.limited, el => el.child(div().px(12).py(4).text_size(11).text_color(t.dim).child("仅显示前 1,000 个有改动的文件")))
       .child(div().flex_1().min_h(0).relative().font_family(settings().font_family ?? "JetBrains Mono").text_size(11)
         .child(div().id("changes-diff-x").size_full().overflow_x_scrollbar()
           .child(div().w_full().min_w(this.diffWidth).h_full().child(v_virtual_list("changes-diff", this.rows.length, 20, (i) => String(i),
             (range) => this.rows.slice(range.start, range.end).map((row) => this.diffRow(row, t))).size_full())))
         .child(Scrollbar.vertical("changes-diff").viewport_from_layout().absolute().inset_0())
-        .when(!this.open && this.files.length > 0, (e) => e.child(div().absolute().top(6).px(12).text_color(t.dim).child("选择一个文件查看改动"))))
+        .when(!this.open && this.files.length > 0, (e) => e.child(div().absolute().top(6).px(12).text_color(t.dim).child("选择文件以查看改动"))))
       .when(Boolean(this.note), (e) => e.child(div().px(10).pb(8).text_size(11).text_color(t.ansi1).child(this.note)))
       .child(h_flex().flex_none().p(10).gap(8).border_t(1).border_color(t.border)
         .child(div().id("commit-message").flex_1().min_w(0).h(32).px(10).flex().items_center().rounded(8).border_1().border_color(this.typing ? t.accent : t.border).cursor_text().on_mouse_down("left", (_e, cx) => cx.stop_propagation()).child(Input.new(this.input).h_full().text_size(12).text_color(t.foreground)))

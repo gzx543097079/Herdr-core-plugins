@@ -27,7 +27,7 @@ const EXTRA = {
   '/code-review': '审查当前改动或 PR',
   '/simplify': '简化改动代码',
   '/security-review': '安全审查待提交的改动',
-  '/agents': '管理子代理',
+  '/agents': '管理子智能体',
   '/rewind': '回退或恢复对话',
   '/usage': '查看用量与限额',
   '/export': '导出对话',

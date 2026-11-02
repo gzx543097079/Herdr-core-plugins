@@ -47,11 +47,11 @@ const kidStatus = (k, listed) => {
   return s === "error" ? "blocked" : s === "done" ? "idle" : s;
 };
 const SORTS = [
-  { id: "priority", label: "按优先级", icon: "clock" },
+  { id: "priority", label: "优先级排序", icon: "clock" },
   { id: "grouped", label: "按空间分组", icon: "layers" },
 ];
 const sortOf = () => SORTS.find((s) => s.id === shared("agents.sort")) ?? SORTS[0];
-const SECTION = { 4: "需要你", 3: "已完成", 2: "工作中", 1: "空闲" };
+const SECTION = { 4: "需要你", 3: "已完成", 2: "运行中", 1: "空闲" };
 const SECTION_STATUS = { 4: "blocked", 3: "done", 2: "working" };
 
 function duration(ms) {
@@ -135,7 +135,7 @@ export default class Agents extends View {
       .p(5)
       .bg(t.popover)
       .text_size(12.8)
-      .child(div().px(8).pt(4).pb(6).text_size(11).text_color(t.dim).child("代理排序"))
+      .child(div().px(8).pt(4).pb(6).text_size(11).text_color(t.dim).child("智能体排序"))
       .children(SORTS.map((s) => h_flex()
         .id(`sort-${s.id}`)
         .h(31)
@@ -410,7 +410,7 @@ export default class Agents extends View {
             .flex_none()
             .items_center()
             .justify_between()
-            .child(div().text_size(11.5).font_medium().text_color(t.dim).child("代理"))
+            .child(div().text_size(11.5).font_medium().text_color(t.dim).child("智能体"))
             .child(
               div()
                 .id("ag-sort")
@@ -418,13 +418,13 @@ export default class Agents extends View {
                 .text_color(t.dim)
                 .hover((s) => s.text_color(t.foreground))
                 .on_click(() => openOverlay({ mod: "agents-i18n", kind: "popup", width: 200, height: 140, props: { sortMenu: true } }))
-                .tooltip(`代理排序：${sort.label}`)
+                .tooltip(`智能体排序：${sort.label}`)
                 .child(svg(`mods/workspace-chrome/${sort.icon}.svg`).size(14)),
             ),
         ),
       )
       .when(list.length === 0 && !collapsed, (el) =>
-        el.child(div().px(12).text_size(12).text_color(t.dim).child("还没有代理状态。代理上报状态后会显示在这里，旧版本或在 tmux 里运行的代理可能不会显示。")),
+        el.child(div().px(12).text_size(12).text_color(t.dim).child("暂时没有智能体状态。智能体上报状态后才会显示在这里；旧版本，以及在 tmux 里运行的智能体可能不会出现。")),
       )
       .child(v_flex().id("ag-list").flex_1().min_h(0).px(collapsed ? 0 : 8).overflow_y_scrollbar().mode("always").children(rows))
       .child(

@@ -132,13 +132,13 @@ export default class MachineAdd extends View {
       .bg(t.blocked + "14")
       .border_1()
       .border_color(t.blocked + "40")
-      .child(div().text_size(12.8).font_semibold().text_color(t.foreground).child(`${mac.name} 是一台 Mac：需要允许一次访问它的文件夹`))
+      .child(div().text_size(12.8).font_semibold().text_color(t.foreground).child(`${mac.name} 是 Mac：需授权访问其文件夹一次`))
       .child(
         div()
           .text_size(12.5)
           .line_height("18px")
           .text_color(t.muted)
-          .child("代理读取桌面、文稿或下载文件夹前，macOS 会在那台 Mac 的屏幕上弹窗询问，并一直等到有人回应。在那里给 herdr-core 授予“完全磁盘访问权限”就不会再问了：在列表里点 +，然后选择这个文件："),
+          .child("智能体读取桌面、文稿或下载文件夹之前，macOS 会在那台 Mac 的屏幕上弹窗询问，并一直等待有人处理。在那里为 herdr-core 开启“完全磁盘访问权限”后就不会再询问：在列表中按 +，然后选择此文件："),
       )
       .child(div().px(8).py(4).rounded(6).bg(t.background).border_1().border_color(t.border).text_size(12).text_color(t.foreground).child(mac.core))
       .child(
@@ -164,7 +164,7 @@ export default class MachineAdd extends View {
                 this.opened[target] = true;
                 cx.notify();
               })
-              .child(`在 ${mac.name} 上打开该设置`),
+              .child(`在 ${mac.name} 上打开此设置`),
           )
           .when(Boolean(this.opened[target]), (el) => el.child(div().text_size(12).text_color(t.dim).child("已在那台 Mac 的屏幕上打开。"))),
       );
@@ -178,7 +178,7 @@ export default class MachineAdd extends View {
       address = r?.code === 0 ? JSON.parse(r.stdout).address : null;
     } catch {}
     if (!address) {
-      this.state[target] = "无法为它打开终端。请在终端里运行 `hc machine add " + target + "`。";
+      this.state[target] = "无法为它打开终端。请在一个终端中运行 `hc machine add " + target + "`。";
       return;
     }
     openOverlay({
@@ -217,7 +217,7 @@ export default class MachineAdd extends View {
       .text_size(12.5)
       .text_color(t.muted)
       .child(svg(I("server")).size(14))
-      .child(div().flex_1().child(`正在添加 ${props().target}：请在这里回答`))
+      .child(div().flex_1().child(`正在添加 ${props().target}：请在此处应答`))
       .child(
         div()
           .id("ma-bar-close")
@@ -241,9 +241,9 @@ export default class MachineAdd extends View {
     const right = done
       ? h_flex().gap(5).items_center().text_size(12).text_color(t.ansi2).child(svg(I("circle-check")).size(13)).child("已添加")
       : st === "adding"
-        ? h_flex().gap(6).items_center().text_size(12).text_color(t.muted).child(svg(I("spinner")).size(12).text_color(t.working).spin(900)).child("连接中")
+        ? h_flex().gap(6).items_center().text_size(12).text_color(t.muted).child(svg(I("spinner")).size(12).text_color(t.working).spin(900)).child("正在连接")
         : st === "terminal"
-          ? div().text_size(12).text_color(t.blocked).child("在终端中等待")
+          ? div().text_size(12).text_color(t.blocked).child("在终端里等待")
           : div()
               .id(`ma-add-${target}`)
               .px(10)
@@ -302,9 +302,9 @@ export default class MachineAdd extends View {
           .text_size(12.8)
           .line_height("19px")
           .text_color(t.muted)
-          .child("VPS、Mac mini、家里的主机都行：Herdr 通过 ssh 连接，笔记本休眠时那边的代理也会继续运行。"),
+          .child("VPS、Mac mini、家里的主机都可以：Herdr 通过 ssh 连接，笔记本休眠时那边的智能体仍会继续工作。"),
       )
-      .child(div().pt(16).pb(6).text_size(11.5).font_medium().text_color(t.dim).child(hosts.length ? "来自你的 ssh 配置" : "你的 ssh 配置里没有主机"))
+      .child(div().pt(16).pb(6).text_size(11.5).font_medium().text_color(t.dim).child(hosts.length ? "从 ssh 配置读取" : "你的 ssh 配置中没有主机"))
       .child(
         v_flex()
           .id("ma-hosts")
@@ -315,10 +315,10 @@ export default class MachineAdd extends View {
           .children(
             this.hosts === null
               ? [div().px(10).py(8).text_size(12.5).text_color(t.dim).child("正在读取 ~/.ssh/config…")]
-              : hosts.map((h) => this.row(t, h.alias, h.alias, [h.user, h.hostname].filter(Boolean).join("@") || (h.aliases.length ? `别名 ${h.aliases.join(", ")}` : ""))),
+              : hosts.map((h) => this.row(t, h.alias, h.alias, [h.user, h.hostname].filter(Boolean).join("@") || (h.aliases.length ? `也称 ${h.aliases.join(", ")}` : ""))),
           ),
       )
-      .child(div().pt(14).pb(6).text_size(11.5).font_medium().text_color(t.dim).child("或输入 ssh 连接方式"))
+      .child(div().pt(14).pb(6).text_size(11.5).font_medium().text_color(t.dim).child("或手动输入 ssh 连接地址"))
       .child(
         h_flex()
           .gap(8)
