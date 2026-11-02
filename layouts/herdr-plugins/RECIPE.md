@@ -22,7 +22,7 @@
 
 布局依赖 Herdr 0.1.10 的官方 `main`、`tabs`、`files`、`changes`、`workspace-chrome` 等模块及图标。复制后对每个 Mod 执行 `herdr-app check`，切换 `herdr-plugins` 并检查 `herdr-app status`。设置面板的后端按需创建布局组合元数据，生成组件以内容摘要命名，不修改官方 Mod。
 
-布局和 Mod 会运行本地 Python、Git、CLI 和 `gh`；历史模块读取、恢复及删除本机会话文件，并可将历史文本传给目标 CLI；Git 工作台可通过 `gh` 访问 GitHub。程序依赖 macOS 的 `/usr/bin/python3` 和 `/bin/zsh`，恢复对话及 PR 功能需本机安装对应 CLI 和 `gh`。工作区中文只覆盖布局中的 Mod，不修改 Herdr 设置页等 frame，也不安装 LaunchAgent。
+布局和 Mod 会运行本地 Python、Git、CLI 和 `gh`；历史模块读取、恢复及删除本机会话文件，并可将历史文本传给目标 CLI；Git 工作台可通过 `gh` 访问 GitHub。程序依赖 macOS 的 `/usr/bin/python3` 和 `/bin/zsh`，恢复对话及 PR 功能需本机安装对应 CLI 和 `gh`。工作区中文覆盖布局中的 Mod 与 Herdr 设置页；设置页英文原文备份在 `herdr-plugins-runtime/frame-orig/`，开启期间安装用户级 LaunchAgent 监听设置页重写，关闭开关后恢复英文并移除该任务。
 
 ## 注意
 

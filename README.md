@@ -12,7 +12,7 @@ Read ~/.config/herdr-app/AGENTS.md, then add this layout: https://github.com/gzx
 
 Agent 会根据本机 Herdr 指南读取 [布局配方](layouts/herdr-plugins/RECIPE.md)和包内文件，将布局与 Mod 复制到 Herdr 配置目录，检查并切换布局。遇到同名布局或 Mod 时，应先处理名称冲突，不覆盖现有文件。
 
-这个布局会运行本地程序、读取和删除本机历史记录，Git 工作台可使用 `gh` 访问 GitHub。安装前请阅读配方中的依赖、限制和数据行为。对话历史只显示当前电脑的记录；工作区中文不修改 Herdr 设置页等 frame。
+这个布局会运行本地程序、读取和删除本机历史记录，Git 工作台可使用 `gh` 访问 GitHub。安装前请阅读配方中的依赖、限制和数据行为。对话历史只显示当前电脑的记录；工作区中文在开启时还会汉化 Herdr 设置页，并安装一个监听该页面的用户级 LaunchAgent，关闭开关后恢复英文并移除。
 
 布局针对 macOS 和 Herdr 0.1.10 构建。当前配色为浅色，暗色外观尚未适配；其他版本需要先验证官方组件兼容性。
 
