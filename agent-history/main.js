@@ -85,10 +85,14 @@ export default class History extends View {
     run("space.new", { folder: r.cwd, tab: title.slice(0, 35), argv });
     if (overlay) closeOverlay(overlay);
   }
+  forkTitle(title) {
+    const base = (title || '未命名对话').replace(/（Fork）$/, '');
+    return (base + '（Fork）').slice(0, 80);
+  }
   fork(r, target, cx) {
     cx.spawn(async cx => {
       try {
-        const title = (r.title || '未命名对话').slice(0, 80);
+        const title = this.forkTitle(r.title);
         let argv;
         if (target === r.agent) {
           // 同 CLI 的分支：Claude 用 --fork-session 生成新会话，Codex 用 fork 子命令。
@@ -111,13 +115,19 @@ export default class History extends View {
   forkMenu() {
     const t = theme(), r = props().record;
     const menu = v_flex().p(5).gap(2).bg(t.popover).text_size(13);
-    menu.child(div().px(9).pt(5).pb(6).text_size(11).text_color(t.dim).child('Fork 对话到'));
+    menu.child(div().px(9).pt(5).pb(6).text_size(11).text_color(t.dim).child('对话操作'));
+    menu.child(h_flex().id('resume').h(38).px(9).gap(10).items_center().rounded(6).cursor_pointer()
+      .text_color(t.foreground).hover(s => s.bg(t.hover))
+      .on_click(() => this.open(r))
+      .child(image('icons/' + r.agent.toLowerCase() + '.svg').size(16).flex_none())
+      .child(div().flex_1().font_medium().child('继续对话'))
+      .child(div().text_size(11).text_color(t.dim).child('默认 ' + r.agent)));
     for (const target of ['Claude', 'Codex']) menu.child(h_flex().id('fork-' + target).h(38).px(9).gap(10).items_center().rounded(6).cursor_pointer()
       .text_color(t.foreground).hover(s => s.bg(t.hover))
       .on_click((_e, cx) => this.fork(r, target, cx))
       .child(image('icons/' + target.toLowerCase() + '.svg').size(16).flex_none())
-      .child(div().flex_1().font_medium().child(target))
-      .when(target === r.agent, e => e.child(div().text_size(11).text_color(t.dim).child('Fork 新分支'))));
+      .child(div().flex_1().font_medium().child(target === r.agent ? 'Fork 新分支' : 'Fork 到 ' + target))
+      .child(div().text_size(11).text_color(t.dim).child(target === r.agent ? '新建分支' : '迁移历史')));
     if (this.error) menu.child(div().px(10).py(6).text_size(11).text_color(t.ansi1).child(this.error));
     return menu;
   }
@@ -247,7 +257,7 @@ export default class History extends View {
             const row = visible.find(item => item.key === key);
             if (!row || row.kind !== 'conversation') return;
             this.selected = key; cx.notify();
-            openOverlay({ mod: 'agent-history', kind: 'popup', width: 160, props: { forkMenu: true, record: row.record } });
+            openOverlay({ mod: 'agent-history', kind: 'popup', width: 220, props: { forkMenu: true, record: row.record } });
           })
           .on_item_click((key, cx) => {
             const row = visible.find(item => item.key === key);
