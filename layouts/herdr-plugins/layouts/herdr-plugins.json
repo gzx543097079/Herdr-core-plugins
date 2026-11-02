@@ -226,15 +226,5 @@
     "accent_foreground": "#ffffff",
     "muted": "#596777",
     "dim": "#667586"
-  },
-  "floating": [
-    {
-      "id": "agent-status",
-      "content": {
-        "mod": "agent-status"
-      },
-      "edge": "bottom",
-      "align": "end"
-    }
-  ]
+  }
 }
