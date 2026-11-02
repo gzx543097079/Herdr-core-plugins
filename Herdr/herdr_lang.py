@@ -190,6 +190,18 @@ def translate_palette(src, table):
 
 # ───────────── 设置页注入「语言」选择器 ─────────────
 
+def add_herdr_imports(src):
+    """语言选择器要用 exec / notify：缺什么补什么，不依赖导入行的固定写法。"""
+    m = re.search(r'import \{([^}]*)\} from "herdr";', src)
+    if not m:
+        raise ValueError("设置页结构变了，找不到 herdr 导入行")
+    names = [n.strip() for n in m.group(1).split(",") if n.strip()]
+    for need in ("exec", "notify"):
+        if need not in names:
+            names.append(need)
+    return src[:m.start()] + f'import {{ {", ".join(names)} }} from "herdr";' + src[m.end():]
+
+
 def inject_settings(src, code, pack):
     choices = [["en", "English"]] + [[c, p["name"]] for c, p in packs().items()]
     state = {
@@ -202,8 +214,8 @@ def inject_settings(src, code, pack):
     }
     const = f"\nconst HERDR_LANG = {json.dumps(state, ensure_ascii=False)};\n"
 
+    src = add_herdr_imports(src)
     steps = [
-        ('closeOverlay } from "herdr";', 'closeOverlay, exec, notify } from "herdr";'),
         ('\nconst LOOKS = { main: "Herdr", terminals: "Terminals", win98: "Herdr 98" };\n',
          '\nconst LOOKS = { main: "Herdr", terminals: "Terminals", win98: "Herdr 98" };\n'
          + const + 'LOOKS[HERDR_LANG.layout] = HERDR_LANG.layoutName;\n'),
@@ -261,21 +273,37 @@ LANG_PICKER = """  // herdr-lang：界面语言选择器，切换时调用插件
 
 # ───────────── frame（App 自己的界面） ─────────────
 
+# 旧版独立语言插件（herdr-plugins-lang）注入过的文件也是译文，不能当英文原文。
+INJECTED = re.compile(r"^// [\w.-]*-lang: injected\n")
+
+
+def english_frame_original(name):
+    """布局自带的英文原文备份（herdr-plugins-runtime/frame-orig）。"""
+    p = APP_HOME / "herdr-plugins-runtime" / "frame-orig" / name / "main.js"
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    return None if INJECTED.match(text) else text
+
+
 def fresh_original(name):
     """拿到 frame 的英文原文：文件没被注入过就是原文（顺便备份），否则用备份。"""
     js = FRAME_DIR / name / "main.js"
     mj = FRAME_DIR / name / "mod.json"
     backup = ORIG_DIR / name
     src = js.read_text(encoding="utf-8")
-    if not src.startswith(MARK):
+    if not INJECTED.match(src):
         backup.mkdir(parents=True, exist_ok=True)
         shutil.copy2(js, backup / "main.js")
         if mj.exists():
             shutil.copy2(mj, backup / "mod.json")
         return src
     if (backup / "main.js").exists():
-        return (backup / "main.js").read_text(encoding="utf-8")
-    return None
+        text = (backup / "main.js").read_text(encoding="utf-8")
+        if not INJECTED.match(text):  # 备份可能来自旧插件，里面已是译文
+            return text
+    return english_frame_original(name)
 
 
 def patch_frames(code):
