@@ -270,8 +270,13 @@ export default class GitWorkbench extends View {
         .child(div().flex_1().min_w(0).truncate().text_size(11.5).text_color(t.muted).child('选择另一条提交，点击「对比至此」'))
         .child(this.btn('clear-base','清除',(_e,cx)=>{this.base=null;cx.notify();},t))));
   }
+  branchRows(){
+    const locals=new Set(this.branches.filter(r=>r.kind==='本地分支').map(r=>r.name));
+    // 远程分支与本地同名时只保留本地，避免下拉框和列表里重复。
+    return this.branches.filter(r=>r.kind!=='标签'&&!(r.kind==='远程分支'&&locals.has(r.name.replace(/^[^/]+\//,''))));
+  }
   branchMenu(t){
-    const refs=this.info?.refs||[],groups=[['',['all','HEAD']],['本地分支',refs.filter(r=>r.startsWith('refs/heads/'))],['远程分支',refs.filter(r=>r.startsWith('refs/remotes/')&&!r.endsWith('/HEAD'))],['标签',refs.filter(r=>r.startsWith('refs/tags/'))]];
+    const refs=this.info?.refs||[],locals=new Set(refs.filter(r=>r.startsWith('refs/heads/')).map(r=>r.slice(11))),groups=[['',['all','HEAD']],['本地分支',refs.filter(r=>r.startsWith('refs/heads/'))],['远程分支',refs.filter(r=>r.startsWith('refs/remotes/')&&!r.endsWith('/HEAD')&&!locals.has(r.replace(/^refs\/remotes\/[^/]+\//,'')))],['标签',refs.filter(r=>r.startsWith('refs/tags/'))]];
     const items=[];let i=0;
     for(const [title,list] of groups){if(!list.length)continue;
       if(title)items.push(div().h(22).px(8).pt(6).flex_none().text_size(10.5).font_medium().text_color(t.dim).child(title+' · '+list.length));
@@ -330,7 +335,7 @@ export default class GitWorkbench extends View {
       .when(!this.loading&&!this.info,e=>e.child(h_flex().mt(6).child(this.btn('empty-pick','选择仓库',(_e,cx)=>{this.repoPicker=true;cx.notify();},t,true,I.folder))));
   }
   list(t){
-    const rows=this.tab==='graph'?this.graphRows().rows:this.tab==='branches'?this.branches.filter(r=>r.kind!=='标签'):this.tab==='tags'?this.branches.filter(r=>r.kind==='标签'):this.prs,id='workbench-'+this.tab;
+    const rows=this.tab==='graph'?this.graphRows().rows:this.tab==='branches'?this.branchRows():this.tab==='tags'?this.branches.filter(r=>r.kind==='标签'):this.prs,id='workbench-'+this.tab;
     const heights=this.tab==='graph'?H:this.refTab()?52:58;
     const count=rows.filter(r=>!r.dirty).length;
     return v_flex().flex_1().min_h(80).gap(0)
