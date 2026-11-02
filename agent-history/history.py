@@ -17,6 +17,28 @@ ROOTS = [('Codex', HOME / '.codex/sessions'), ('Claude', HOME / '.claude/project
 HANDOFF_PREFIX = '以下是从其他 CLI 导入的历史对话文本，供继续对话参考。'
 HANDOFF_TITLE = '导入对话标题：'
 
+# 这些开头是 CLI 注入的命令回显或系统上下文，不能当作对话标题。
+NOISE_PREFIXES = ('<command-name>', '<command-message>', '<command-args>',
+                  '<local-command-stdout>', '<local-command-caveat>', '<system-reminder>')
+
+
+def user_text(obj):
+    """Claude 用户消息里的真实文本；命令回显、系统注入和纯工具结果返回空串。"""
+    if obj.get('isSidechain') or obj.get('isMeta'):
+        return ''
+    content = (obj.get('message') or {}).get('content', '')
+    if isinstance(content, str):
+        text = content
+    elif isinstance(content, list):
+        text = '\n'.join(part.get('text', '') for part in content
+                         if isinstance(part, dict) and part.get('type') == 'text')
+    else:
+        return ''
+    text = text.strip()
+    if not text or text.startswith(NOISE_PREFIXES):
+        return ''
+    return text
+
 
 def display_title(title):
     if title.startswith(HANDOFF_TITLE):
@@ -29,7 +51,7 @@ def display_title(title):
 
 
 def parse(path, kind, mtime):
-    sid = cwd = title = ''
+    sid = cwd = custom = ai = prompt = ''
     try:
         with path.open(encoding='utf-8') as f:
             for line in f:
@@ -41,19 +63,21 @@ def parse(path, kind, mtime):
                     payload = obj.get('payload') or {}
                     if obj.get('type') == 'session_meta':
                         sid, cwd = payload.get('id', ''), payload.get('cwd', '')
-                    if obj.get('type') == 'event_msg' and payload.get('type') == 'user_message' and not title:
-                        title = payload.get('message', '')
+                    if obj.get('type') == 'event_msg' and payload.get('type') == 'user_message' and not prompt:
+                        prompt = payload.get('message', '')
+                    if sid and cwd and prompt:
+                        break
                 else:
                     sid = sid or obj.get('sessionId', '')
                     cwd = cwd or obj.get('cwd', '')
-                    if obj.get('type') == 'user' and not title:
-                        content = obj.get('message', {}).get('content', '')
-                        if isinstance(content, str):
-                            title = content
-                        elif isinstance(content, list):
-                            title = ' '.join(x.get('text', '') for x in content if isinstance(x, dict) and x.get('type') == 'text')
-                if sid and cwd and title:
-                    break
+                    if obj.get('type') == 'custom-title':
+                        # 用户重命名后以最后一条为准。
+                        custom = obj.get('customTitle') or custom
+                    elif obj.get('type') == 'ai-title':
+                        ai = obj.get('aiTitle') or ai
+                    elif obj.get('type') == 'user' and not prompt:
+                        prompt = user_text(obj)
+        title = custom or ai or prompt
         if sid and cwd and isinstance(title, str) and title:
             return {'id': sid, 'cwd': cwd, 'title': ' '.join(display_title(title).split())[:180] or '未命名对话', 'agent': kind, 'time': mtime, 'path': str(path)}
     except (OSError, UnicodeError, AttributeError, TypeError):
@@ -85,7 +109,7 @@ def handoff(raw, kind, title=''):
                                  if isinstance(part, dict) and part.get('type') in ('input_text', 'output_text'))
             else:
                 role = obj.get('type')
-                if role not in ('user', 'assistant') or obj.get('isSidechain'):
+                if role not in ('user', 'assistant') or obj.get('isSidechain') or obj.get('isMeta'):
                     continue
                 message = obj.get('message') or {}
                 content = message.get('content', '')
@@ -96,7 +120,7 @@ def handoff(raw, kind, title=''):
                                      if isinstance(part, dict) and part.get('type') == 'text')
                 else:
                     continue
-            if isinstance(text, str) and text.strip():
+            if isinstance(text, str) and text.strip() and not text.strip().startswith(NOISE_PREFIXES):
                 messages.append(f'{role}:\n{text}')
     if not messages:
         raise ValueError('原对话没有可迁移的文本消息')
@@ -116,7 +140,7 @@ def scan():
         fcntl.flock(lock, fcntl.LOCK_EX)
         try:
             saved = json.loads(CACHE.read_text(encoding='utf-8'))
-            old = saved.get('files', {}) if saved.get('version') == 2 else {}
+            old = saved.get('files', {}) if saved.get('version') == 3 else {}
         except (OSError, ValueError, AttributeError):
             old = {}
         files, result = {}, []
@@ -160,7 +184,7 @@ def scan():
             fd, name = tempfile.mkstemp(prefix='history-', suffix='.tmp', dir=CACHE_DIR)
             try:
                 with os.fdopen(fd, 'w', encoding='utf-8') as f:
-                    json.dump({'version': 2, 'files': files}, f, ensure_ascii=False)
+                    json.dump({'version': 3, 'files': files}, f, ensure_ascii=False)
                 os.replace(name, CACHE)
             finally:
                 if os.path.exists(name):
