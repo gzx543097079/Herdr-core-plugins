@@ -90,17 +90,29 @@ export default class History extends View {
     } else run("space.new", { folder: r.cwd, tab: title, argv });
     if (overlay) closeOverlay(overlay);
   }
+  openInNewSpace(r, argv, title) {
+    const overlay = props()?.overlay;
+    run("space.new", { folder: r.cwd, tab: title.slice(0, 35), argv });
+    if (overlay) closeOverlay(overlay);
+  }
   fork(r, target, cx) {
-    if (target === r.agent) {
-      cx.spawn(async cx => { try { await this.open(r); } catch (e) { this.error = e?.message || String(e); cx.notify(); } });
-      return;
-    }
     cx.spawn(async cx => {
       try {
-        const result = await exec('/usr/bin/python3', ['-I', appHome() + '/mods/agent-history/history.py', 'handoff', r.path, r.agent, r.title || '未命名对话']);
-        if (result.code !== 0) throw new Error(result.stderr || '读取对话失败');
-        const { prompt } = JSON.parse(result.stdout);
-        await this.open(r, [await this.cli(target === 'Codex' ? 'codex' : 'claude'), prompt]);
+        const binary = await this.cli(target === 'Codex' ? 'codex' : 'claude');
+        const title = (r.title || '未命名对话').slice(0, 80);
+        let argv;
+        if (target === r.agent) {
+          // 同 CLI 的分支：Claude 用 --fork-session 生成新会话，Codex 用 fork 子命令。
+          argv = target === 'Codex'
+            ? [binary, 'fork', r.id]
+            : [binary, '--resume', r.id, '--fork-session', '--name', title];
+        } else {
+          const result = await exec('/usr/bin/python3', ['-I', appHome() + '/mods/agent-history/history.py', 'handoff', r.path, r.agent, title]);
+          if (result.code !== 0) throw new Error(result.stderr || '读取对话失败');
+          const { prompt } = JSON.parse(result.stdout);
+          argv = target === 'Claude' ? [binary, '--name', title, prompt] : [binary, prompt];
+        }
+        this.openInNewSpace(r, argv, title);
       } catch (e) {
         this.error = 'Fork 失败：' + (e?.message || String(e));
         cx.notify();
@@ -116,7 +128,7 @@ export default class History extends View {
       .on_click((_e, cx) => this.fork(r, target, cx))
       .child(image('icons/' + target.toLowerCase() + '.svg').size(16).flex_none())
       .child(div().flex_1().font_medium().child(target))
-      .when(target === r.agent, e => e.child(div().text_size(11).text_color(t.dim).child('恢复原对话'))));
+      .when(target === r.agent, e => e.child(div().text_size(11).text_color(t.dim).child('Fork 新分支'))));
     if (this.error) menu.child(div().px(10).py(6).text_size(11).text_color(t.ansi1).child(this.error));
     return menu;
   }
