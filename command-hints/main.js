@@ -1,7 +1,8 @@
 import { View, div, image, svg } from 'gpui-kit';
 import { h_flex, v_flex, v_virtual_list, Scrollbar } from 'gpui-base';
 import { theme, run, exec, spaces, panes, focused, agents, settings, hc, layout } from 'herdr';
-import { parseSlashMenu } from './screen.js';
+import { parseSlashMenu, findPhrases } from './screen.js';
+import { PHRASES } from './phrases.js';
 
 const COMMANDS = {
   Claude: [
@@ -37,12 +38,16 @@ const EXTRA = {
   '/pr-comments': '查看 PR 评论',
   '/add-dir': '添加工作目录',
   '/hooks': '管理 Hook',
-  '/ide': '连接 IDE',
+  '/ide': '从 IDE 引入当前选中与已打开文件',
   '/install-github-app': '安装 GitHub 应用',
   '/todos': '查看待办事项',
   '/output-style': '设置输出风格',
   '/statusline': '设置状态栏',
   '/vim': '切换 Vim 模式',
+  '/fast': '1.5 倍速度',
+  '/presets': '运行或保存可复用的提示与斜杠命令',
+  '/daybreak': '管理网络安全相关的访问权限',
+  '/keymap': '重新映射终端快捷键',
   '/terminal-setup': '安装终端快捷键',
   '/mobile': '下载 Claude 移动应用',
   '/auto-mode-setup': '配置 auto mode',
@@ -56,7 +61,7 @@ const CJK = /[㐀-鿿]/;
 export default class CommandHints extends View {
   init(_p, cx) {
     this.agent='Claude'; this.skillsOpen=false; this.cache=new Map(); this.pending=new Set(); this.copied='';
-    this.live=null; this.polling=false;
+    this.live=null; this.matches=[]; this.polling=false;
     cx.timer.every(700, cx => this.poll(cx));
   }
   // 识别当前聚焦终端里运行的 CLI：Claude Code / Codex，其他程序返回 null。
@@ -78,15 +83,26 @@ export default class CommandHints extends View {
   poll(cx) {
     if(this.polling)return;
     const address=focused()?.terminal;
-    if(!address||!this.detect()||!this.panelShown()){this.setLive(null,cx);return;}
+    if(!address||!this.detect()||!this.panelShown()){this.setLive(null,cx);this.setMatches([],cx);return;}
     this.polling=true;
     cx.spawn(async cx=>{
       try {
         const result=await hc(['read',address]);
-        this.setLive(result.code===0?parseSlashMenu(result.stdout):null,cx);
-      } catch(_) { this.setLive(null,cx); }
+        const screen=result.code===0?result.stdout:'';
+        const live=parseSlashMenu(screen);
+        this.setLive(live,cx);
+        this.setMatches(live?[]:this.phrasesFor(screen),cx);
+      } catch(_) { this.setLive(null,cx); this.setMatches([],cx); }
       this.polling=false;
     });
+  }
+  // 常驻页脚文案只跟着对照一起显示，不单独把面板切走。
+  phrasesFor(screen) {
+    const all=findPhrases(screen,PHRASES);
+    return all.some(rule=>!rule.quiet)?all.slice(0,6):[];
+  }
+  setMatches(matches,cx) {
+    if(JSON.stringify(matches)!==JSON.stringify(this.matches)){this.matches=matches;cx.notify();}
   }
   setLive(live,cx) {
     const next=live&&live.typed?live:null;
@@ -138,9 +154,17 @@ export default class CommandHints extends View {
   }
   status(t) {
     if(this.live)return div().text_size(11.5).text_color(t.dim).child('已识别终端输入 '+(this.live.typed==='/'?'/ 命令':this.live.typed)+' · 点击命令复制');
+    if(this.matches.length)return div().text_size(11.5).text_color(t.dim).child('已对照终端里的英文文案 · 只读');
     if(this.copied==='Ctrl+C')return div().text_size(11.5).text_color(t.muted).child('快捷键需在 CLI 内手动按下：运行中会中断，空闲时清空输入');
     if(this.copied)return h_flex().gap(5).items_center().text_size(11.5).text_color(t.ansi2).child(svg('mods/command-hints/check.svg').size(12).text_color(t.ansi2)).child('已复制，粘贴到终端使用');
     return div().text_size(11.5).text_color(t.dim).child('点击命令复制，不会自动执行');
+  }
+  matchList(t,mono) {
+    return v_flex().flex_1().min_h(0).gap(1)
+      .child(div().h(18).px(6).text_size(11).font_medium().text_color(t.muted).child('终端文案对照'))
+      .children(this.matches.map(rule=>h_flex().id('phrase-'+rule.en).h(24).gap(12).px(6).items_center().rounded(5)
+        .child(div().flex_1().min_w(0).truncate().font_family(mono).text_size(12).text_color(t.foreground).child(rule.en))
+        .child(div().flex_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(rule.zh))));
   }
   liveList(live,t,mono) {
     const rows=live.rows.slice(0,6);
@@ -166,7 +190,7 @@ export default class CommandHints extends View {
         .child(this.ghost('skills-toggle',this.skillsOpen?'隐藏 Skill':'显示 Skill',(_e,cx)=>{this.skillsOpen=!this.skillsOpen;if(this.skillsOpen)this.loadSkills(cx);cx.notify();},t))
         .child(h_flex().id('commands-hide').size(24).flex_none().items_center().justify_center().rounded(6).cursor_pointer().hover(s=>s.bg(t.hover)).tooltip('收起命令提示').on_click(()=>run('layout.hide',{id:'command-hints'}))
           .child(svg('mods/workspace-chrome/x.svg').size(13).text_color(t.muted))))
-      .child(this.live ? this.liveList(this.live,t,mono) : h_flex().flex_1().min_h(0).items_stretch().gap(12)
+      .child(this.live ? this.liveList(this.live,t,mono) : this.matches.length ? this.matchList(t,mono) : h_flex().flex_1().min_h(0).items_stretch().gap(12)
         .child(h_flex().id('command-columns').flex_1().min_w(0).items_stretch().gap(12).overflow_x_scroll().children(COMMANDS[this.agent].map(([group,rows])=>v_flex().flex_1().min_w(200).max_w(240).gap(1)
           .child(div().h(18).px(6).text_size(11).font_medium().text_color(t.muted).child(group))
           .children(rows.map(([command,description])=>this.command(command,description,t,mono))))))

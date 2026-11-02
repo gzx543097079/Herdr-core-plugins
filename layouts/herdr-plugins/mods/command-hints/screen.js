@@ -2,7 +2,7 @@
 // 只解析 hc read 的纯文本输出，不向终端发送任何内容。
 
 const INPUT_ROW = /^\s*[❯›]\s?(.*)$/;
-const MENU_ROW = /^\s*(?:❯\s*)?(\/[A-Za-z0-9:_-]+)\s{2,}(\S.*?)\s*$/;
+const MENU_ROW = /^\s*(?:[❯›]\s*)?(\/[A-Za-z0-9:_-]+)\s{2,}(\S.*?)\s*$/;
 const SEPARATOR = /^\s*[─━═-]{8,}\s*$/;
 
 export function parseSlashMenu(text) {
@@ -37,4 +37,19 @@ export function parseSlashMenu(text) {
     if (rows.length) break;
   }
   return { typed, rows };
+}
+
+function lineMatches(line, rule) {
+  if (rule.exact) return line.trim() === rule.en;
+  const index = line.indexOf(rule.en);
+  if (index < 0) return false;
+  const before = line[index - 1] || '';
+  const after = line[index + rule.en.length] || '';
+  return !/[A-Za-z]/.test(before) && !/[A-Za-z]/.test(after);
+}
+
+// 在可见画面里找出已收录的英文文案；同一条只记一次，按词条顺序返回。
+export function findPhrases(text, phrases) {
+  const lines = String(text ?? '').split('\n');
+  return phrases.filter((rule) => lines.some((line) => lineMatches(line, rule)));
 }
