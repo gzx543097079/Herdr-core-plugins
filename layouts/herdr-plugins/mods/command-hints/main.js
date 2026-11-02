@@ -1,6 +1,7 @@
 import { View, div, image, svg } from 'gpui-kit';
 import { h_flex, v_flex, v_virtual_list, Scrollbar } from 'gpui-base';
-import { theme, run, exec, spaces, panes, focused, agents, settings, appHome } from 'herdr';
+import { theme, run, exec, spaces, panes, focused, agents, settings, hc, layout, appHome } from 'herdr';
+import { parseSlashMenu } from './screen.js';
 
 const COMMANDS = {
   Claude: [
@@ -20,8 +21,44 @@ const COMMANDS = {
     ['工具', [['/copy','复制最近回复'],['/ps','查看后台终端'],['/skills','查看技能'],['/','打开命令菜单']]]
   ]
 };
+const EXTRA = {
+  '/review': '审查当前改动或 PR',
+  '/code-review': '审查当前改动或 PR',
+  '/simplify': '简化改动代码',
+  '/security-review': '安全审查待提交的改动',
+  '/agents': '管理子代理',
+  '/rewind': '回退或恢复对话',
+  '/usage': '查看用量与限额',
+  '/export': '导出对话',
+  '/doctor': '检查运行环境',
+  '/login': '登录账号',
+  '/bug': '反馈问题',
+  '/release-notes': '查看更新内容',
+  '/pr-comments': '查看 PR 评论',
+  '/add-dir': '添加工作目录',
+  '/hooks': '管理 Hook',
+  '/ide': '连接 IDE',
+  '/install-github-app': '安装 GitHub 应用',
+  '/todos': '查看待办事项',
+  '/output-style': '设置输出风格',
+  '/statusline': '设置状态栏',
+  '/vim': '切换 Vim 模式',
+  '/terminal-setup': '安装终端快捷键',
+  '/mobile': '下载 Claude 移动应用',
+  '/auto-mode-setup': '配置 auto mode',
+  '/feedback': '发送反馈',
+};
+// 命令 -> 中文说明；终端自己已显示中文时优先用终端的文案。
+const ZH = { ...EXTRA };
+for (const list of Object.values(COMMANDS)) for (const [, rows] of list) for (const [command, description] of rows) ZH[command] = description;
+const CJK = /[㐀-鿿]/;
+
 export default class CommandHints extends View {
-  init() { this.agent='Claude'; this.skillsOpen=false; this.cache=new Map(); this.pending=new Set(); this.copied=''; }
+  init(_p, cx) {
+    this.agent='Claude'; this.skillsOpen=false; this.cache=new Map(); this.pending=new Set(); this.copied='';
+    this.live=null; this.polling=false;
+    cx.timer.every(700, cx => this.poll(cx));
+  }
   // 识别当前聚焦终端里运行的 CLI：Claude Code / Codex，其他程序返回 null。
   detect() {
     const f=focused(), pane=f?.pane ? panes().find(p=>p.pane===f.pane) : null;
@@ -31,6 +68,34 @@ export default class CommandHints extends View {
   }
   project() { const f=focused(); return f?.cwd || panes().find(p=>p.pane===f?.pane)?.cwd || spaces().find(s=>s.active)?.folder || ''; }
   key() { return this.agent+'\n'+this.project(); }
+  panelNode(id,node=layout()) {
+    if(node?.id===id)return node;
+    for(const child of node?.children||[]){const found=this.panelNode(id,child);if(found)return found;}
+    return null;
+  }
+  panelShown() { const node=this.panelNode('command-hints'); return Boolean(node)&&!node.hidden; }
+  // 只读终端画面，识别正在输入的斜杠命令和 CLI 的建议；不向终端写入任何内容。
+  poll(cx) {
+    if(this.polling)return;
+    const address=focused()?.terminal;
+    if(!address||!this.detect()||!this.panelShown()){this.setLive(null,cx);return;}
+    this.polling=true;
+    cx.spawn(async cx=>{
+      try {
+        const result=await hc(['read',address]);
+        this.setLive(result.code===0?parseSlashMenu(result.stdout):null,cx);
+      } catch(_) { this.setLive(null,cx); }
+      this.polling=false;
+    });
+  }
+  setLive(live,cx) {
+    const next=live&&live.typed?live:null;
+    if(JSON.stringify(next)!==JSON.stringify(this.live)){this.live=next;cx.notify();}
+  }
+  describe(row) {
+    const text=row.description||'';
+    return CJK.test(text)?text:(ZH[row.command]||text);
+  }
   loadSkills(cx, force=false) {
     const key=this.key(), agent=this.agent, cwd=this.project();
     if (this.pending.has(key) || (!force && this.cache.has(key))) return;
@@ -72,9 +137,17 @@ export default class CommandHints extends View {
       .when(done&&command!=='Ctrl+C',e=>e.child(svg('mods/command-hints/check.svg').size(12).text_color(t.ansi2)));
   }
   status(t) {
+    if(this.live)return div().text_size(11.5).text_color(t.dim).child('已识别终端输入 '+(this.live.typed==='/'?'/ 命令':this.live.typed)+' · 点击命令复制');
     if(this.copied==='Ctrl+C')return div().text_size(11.5).text_color(t.muted).child('快捷键需在 CLI 内手动按下：运行中会中断，空闲时清空输入');
     if(this.copied)return h_flex().gap(5).items_center().text_size(11.5).text_color(t.ansi2).child(svg('mods/command-hints/check.svg').size(12).text_color(t.ansi2)).child('已复制，粘贴到终端使用');
     return div().text_size(11.5).text_color(t.dim).child('点击命令复制，不会自动执行');
+  }
+  liveList(live,t,mono) {
+    const rows=live.rows.slice(0,6);
+    return v_flex().flex_1().min_h(0).gap(1)
+      .child(div().h(18).px(6).text_size(11).font_medium().text_color(t.muted).child(live.rows.length?'终端当前建议':'终端里还没有可见的建议'))
+      .children(rows.map(row=>this.command(row.command,this.describe(row),t,mono)))
+      .when(live.rows.length>rows.length,el=>el.child(div().px(6).py(2).text_size(11).text_color(t.dim).child('还有 '+(live.rows.length-rows.length)+' 条，按 ↓ 查看')));
   }
   render(cx) {
     // 聚焦终端的 CLI 变化时自动切换；手动点选在下次 CLI 变化前保持有效。
@@ -93,7 +166,7 @@ export default class CommandHints extends View {
         .child(this.ghost('skills-toggle',this.skillsOpen?'隐藏 Skill':'显示 Skill',(_e,cx)=>{this.skillsOpen=!this.skillsOpen;if(this.skillsOpen)this.loadSkills(cx);cx.notify();},t))
         .child(h_flex().id('commands-hide').size(24).flex_none().items_center().justify_center().rounded(6).cursor_pointer().hover(s=>s.bg(t.hover)).tooltip('收起命令提示').on_click(()=>run('layout.hide',{id:'command-hints'}))
           .child(svg('mods/workspace-chrome/x.svg').size(13).text_color(t.muted))))
-      .child(h_flex().flex_1().min_h(0).items_stretch().gap(12)
+      .child(this.live ? this.liveList(this.live,t,mono) : h_flex().flex_1().min_h(0).items_stretch().gap(12)
         .child(h_flex().id('command-columns').flex_1().min_w(0).items_stretch().gap(12).overflow_x_scroll().children(COMMANDS[this.agent].map(([group,rows])=>v_flex().flex_1().min_w(200).max_w(240).gap(1)
           .child(div().h(18).px(6).text_size(11).font_medium().text_color(t.muted).child(group))
           .children(rows.map(([command,description])=>this.command(command,description,t,mono))))))
