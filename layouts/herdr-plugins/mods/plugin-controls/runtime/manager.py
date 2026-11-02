@@ -14,6 +14,7 @@ import tempfile
 RUNTIME = Path(__file__).resolve().parent
 PLUGINS = {'history': '对话历史', 'motion': '桌面动效', 'language': '简体中文',
            'commands': '命令提示', 'git': 'Git 工作台'}
+_FRAME_LANG = None
 
 
 def load_module(name, path):
@@ -29,6 +30,13 @@ def composer_module():
     composer = load_module('herdr_layout_composer', RUNTIME / 'composer.py')
     composer.motion_module = lambda: load_module('herdr_layout_motion', RUNTIME / 'desktop-motion' / 'install.py')
     return composer
+
+
+def frame_lang_module():
+    global _FRAME_LANG
+    if _FRAME_LANG is None:
+        _FRAME_LANG = load_module('herdr_plugins_frame_lang', RUNTIME / 'frame_lang.py')
+    return _FRAME_LANG
 
 
 def read_json(path):
@@ -118,6 +126,12 @@ def status(app):
         active = data['layout']
         managed = active == 'herdr-plugins'
         plugins = metadata(app, composer_module())['state'] if managed else {}
+        if plugins.get('language'):
+            # 设置页汉化随「简体中文」开关生效；Herdr 重写设置页后在这里补回。
+            try:
+                frame_lang_module().ensure(app)
+            except Exception:
+                pass
         return {'running': True, 'layout': active, 'errors': data.get('errors', []),
                 'plugins': plugins, 'managed': managed, 'busy': busy,
                 'last_operation': last_operation(store)}
@@ -156,7 +170,20 @@ def apply(app, plugin, action):
     actual = composer.compose(app, 'herdr-plugins', {plugin: action == 'install'})
     if actual != expected:
         raise RuntimeError('布局已更新，但插件状态未达到预期。')
-    return PLUGINS[plugin] + ('已开启' if action == 'install' else '已关闭')
+    message = PLUGINS[plugin] + ('已开启' if action == 'install' else '已关闭')
+    if plugin == 'language':
+        # 布局切换完成后再处理设置页，避免 Herdr 重载时又被改写。
+        try:
+            frame = frame_lang_module()
+            if action == 'install':
+                frame.apply(app)
+                frame.install_agent(app)
+            else:
+                frame.uninstall_agent()
+                frame.restore(app)
+        except Exception as error:
+            message += '（设置页汉化失败：' + str(error)[:200] + '）'
+    return message
 
 
 def launch(app, plugin, action):

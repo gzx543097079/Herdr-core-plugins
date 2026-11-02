@@ -6,7 +6,7 @@ const MANAGER = () => appHome() + "/mods/plugin-controls/runtime/manager.py";
 const plugins = [
   ["history", "对话历史", "浏览和恢复本地对话", "clock"],
   ["motion", "桌面动效", "界面过渡与列表优化", "layers"],
-  ["language", "简体中文", "工作区界面中文化", "file-text"],
+  ["language", "简体中文", "工作区与设置页中文化", "file-text"],
   ["commands", "命令提示", "在底部查看常用命令", "terminal"],
   ["git", "Git 工作台", "查看提交、差异和 PR", "git-branch"],
 ];
